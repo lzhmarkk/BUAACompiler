@@ -1,7 +1,7 @@
 #include "word.h"
 
 int isSpace(char ch) {
-    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n' || ch == '\v';
+    return ch == ' ' || ch == '\f' || ch == '\n' || ch == '\r' || ch == '\t' || ch == '\v';
 }
 
 int isLetter(char ch) {
@@ -10,10 +10,6 @@ int isLetter(char ch) {
 
 int isDigit(char ch) {
     return ch >= '0' && ch <= '9';
-}
-
-int isColon(char ch) {
-    return ch == ':';
 }
 
 int isComma(char ch) {
@@ -40,7 +36,7 @@ int isDivi(char ch) {
     return ch == '/';
 }
 
-int isStar(char ch) {
+int isMult(char ch) {
     return ch == '*';
 }
 
@@ -50,4 +46,40 @@ int isLpar(char ch) {
 
 int isRpar(char ch) {
     return ch == ')';
+}
+
+int isLbrack(char ch) {
+    return ch == '[';
+}
+
+int isRbrack(char ch) {
+    return ch == ']';
+}
+
+int isLbrace(char ch) {
+    return ch == '{';
+}
+
+int isRbrace(char ch) {
+    return ch == '}';
+}
+
+int isLss(char ch) {
+    return ch == '<';
+}
+
+int isGre(char ch) {
+    return ch == '>';
+}
+
+int isExcla(char ch) {
+    return ch == '!';
+}
+
+int isDoubQuo(char ch) {
+    return ch == '\"';
+}
+
+int isSiglQuo(char ch) {
+    return ch == '\'';
 }

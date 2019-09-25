@@ -34,77 +34,77 @@ int isReserved(char *ch) {
 
 char *getReserved(int s) {
     switch (s) {
-        case 1:
+        case IDENFR:
             return "IDENFR";
-        case 2:
+        case INTCON:
             return "INTCON";
-        case 3:
+        case CHARCON:
             return "CHARCON";
-        case 4:
+        case STRCON:
             return "STRCON";
-        case 5:
+        case CONSTTK:
             return "CONSTTK";
-        case 6:
+        case INTTK:
             return "INTTK";
-        case 7:
+        case CHARTK:
             return "CHARTK";
-        case 8:
+        case VOIDTK:
             return "VOIDTK";
-        case 9:
+        case MAINTK:
             return "MAINTK";
-        case 10:
+        case IFTK:
             return "IFTK";
-        case 11:
+        case ELSETK:
             return "ELSETK";
-        case 12:
+        case DOTK:
             return "DOTK";
-        case 13:
+        case WHILETK:
             return "WHILETK";
-        case 14:
+        case FORTK:
             return "FORTK";
-        case 15:
+        case SCANFTK:
             return "SCANFTK";
-        case 16:
+        case PRINTFTK:
             return "PRINTFTK";
-        case 17:
+        case RETURNTK:
             return "RETURNTK";
-        case 18:
+        case PLUS:
             return "PLUS";
-        case 19:
+        case MINU:
             return "MINU";
-        case 20:
+        case MULT:
             return "MULT";
-        case 21:
+        case DIV:
             return "DIV";
-        case 22:
+        case LSS:
             return "LSS";
-        case 23:
+        case LEQ:
             return "LEQ";
-        case 24:
+        case GRE:
             return "GRE";
-        case 25:
+        case GEQ:
             return "GEQ";
-        case 26:
+        case EQL:
             return "EQL";
-        case 27:
+        case NEQ:
             return "NEQ";
-        case 28:
+        case ASSIGN:
             return "ASSIGN";
-        case 29:
+        case SEMICN:
             return "SEMICN";
-        case 30:
+        case COMMA:
             return "COMMA";
-        case 31:
+        case LPARENT:
             return "LPARENT";
-        case 32:
+        case RPARENT:
             return "RPARENT";
-        case 33:
+        case LBRACK:
             return "LBRACK";
-        case 34:
+        case RBRACK:
             return "RBRACK";
-        case 35:
+        case LBRACE:
             return "LBRACE";
-        case 36:
+        case RBRACE:
             return "RBRACE";
         default:
             return "";

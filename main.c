@@ -4,25 +4,29 @@
 
 char buf[MAXLENGTH] = {};
 char token[TOKENLENGTH] = {};
-int i;
-int j;
+int i;//line pointer
+int j;//token length
 
 int main() {
     FILE *fpI = NULL, *fpO = NULL;
-    fpI = fopen("/testfile.txt", "r");
-    fpO = fopen("/output.txt", "w");
+    fpI = fopen("../testfile.txt", "r");
+    fpO = fopen("../output.txt", "w");
     while (fgets(buf, MAXLENGTH, fpI)) {
-        int index = i;
-        symble = getSymble(buf);
-        if (symble == UNDEFINED) {
-            return 1;
+        i = 0;
+        //while (i < strlen(buf)) {
+        while (i < strlen(buf) - 1) {
+        //while (buf[i] != EOF && buf[i] != '\n' && buf[i] != '\0') {
+            symble = getSymble(buf);
+            if (symble == UNDEFINED) {
+                return 1;
+            }
+            printf("%s %s\n", getReserved(symble), token);
+            fprintf(fpO, "%s %s\n", getReserved(symble), token);
         }
-        char pr[TOKENLENGTH] = {};
-        strncpy(pr, buf + i, j);
-        fprintf(fpO, "%s %s", pr, getReserved(symble));
     }
     fclose(fpI);
     fclose(fpO);
+    return 0;
 }
 
 int getSymble(char *str) {
@@ -35,15 +39,13 @@ int getSymble(char *str) {
             catToken(str[i]);
             i++;
         }
-        i--;
         int r = isReserved(token);
-        return r == 0 ? IDENFR : r;
+        return r == UNDEFINED ? IDENFR : r;
     } else if (isDigit(str[i])) {
         while (isDigit(str[i])) {
             catToken(str[i]);
             i++;
         }
-        i--;
         return INTCON;
     } else if (isLss(str[i])) {
         catToken(str[i]);
@@ -65,6 +67,7 @@ int getSymble(char *str) {
         catToken(str[i]);
         if (isEqu(str[++i])) {
             catToken(str[i]);
+            i++;
             return EQL;
         }
         return ASSIGN;
@@ -72,6 +75,7 @@ int getSymble(char *str) {
         catToken(str[i]);
         if (isEqu(str[++i])) {
             catToken(str[i]);
+            i++;
             return NEQ;
         }
         return UNDEFINED;
@@ -88,10 +92,8 @@ int getSymble(char *str) {
         return UNDEFINED;
     } else if (isSiglQuo(str[i])) {
         i++;
-        if (isPlus(str[i]) || isMult(str[i]) || isLetter(str[i]) || isDigit(str[i])) {
-            catToken(str[i]);
-            i++;
-        }
+        catToken(str[i]);
+        i++;
         if (isSiglQuo(str[i])) {
             i++;
             return CHARCON;
@@ -99,73 +101,52 @@ int getSymble(char *str) {
         return UNDEFINED;
     } else if (isPlus(str[i])) {
         catToken(str[i]);
+        i++;
         return PLUS;
-    } else if (
-            isMinus(str[i])
-            ) {
+    } else if (isMinus(str[i])) {
         catToken(str[i]);
-        return
-                MINU;
-    } else if (
-            isMult(str[i])
-            ) {
+        i++;
+        return MINU;
+    } else if (isMult(str[i])) {
         catToken(str[i]);
-        return
-                MULT;
-    } else if (
-            isDivi(str[i])
-            ) {
+        i++;
+        return MULT;
+    } else if (isDivi(str[i])) {
         catToken(str[i]);
-        return
-                DIV;
-    } else if (
-            isSemi(str[i])
-            ) {
+        i++;
+        return DIV;
+    } else if (isSemi(str[i])) {
         catToken(str[i]);
-        return
-                SEMICN;
-    } else if (
-            isComma(str[i])
-            ) {
+        i++;
+        return SEMICN;
+    } else if (isComma(str[i])) {
         catToken(str[i]);
-        return
-                COMMA;
-    } else if (
-            isLpar(str[i])
-            ) {
+        i++;
+        return COMMA;
+    } else if (isLpar(str[i])) {
         catToken(str[i]);
-        return
-                LPARENT;
-    } else if (
-            isRpar(str[i])
-            ) {
+        i++;
+        return LPARENT;
+    } else if (isRpar(str[i])) {
         catToken(str[i]);
-        return
-                RPARENT;
-    } else if (
-            isLbrack(str[i])
-            ) {
+        i++;
+        return RPARENT;
+    } else if (isLbrack(str[i])) {
         catToken(str[i]);
-        return
-                LBRACK;
-    } else if (
-            isRbrack(str[i])
-            ) {
+        i++;
+        return LBRACK;
+    } else if (isRbrack(str[i])) {
         catToken(str[i]);
-        return
-                RBRACK;
-    } else if (
-            isLbrace(str[i])
-            ) {
+        i++;
+        return RBRACK;
+    } else if (isLbrace(str[i])) {
         catToken(str[i]);
-        return
-                LBRACE;
-    } else if (
-            isRbrace(str[i])
-            ) {
+        i++;
+        return LBRACE;
+    } else if (isRbrace(str[i])) {
         catToken(str[i]);
-        return
-                RBRACE;
+        i++;
+        return RBRACE;
     }
     return UNDEFINED;
 }
@@ -173,7 +154,7 @@ int getSymble(char *str) {
 void clearToken() {
     j = 0;
     int k;
-    for (k = 0; k < 20; k++) {
+    for (k = 0; k < TOKENLENGTH; k++) {
         token[k] = 0;
     }
 }
