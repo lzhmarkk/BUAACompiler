@@ -5,7 +5,7 @@ int isSpace(char ch) {
 }
 
 int isLetter(char ch) {
-    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch == '_');
 }
 
 int isDigit(char ch) {

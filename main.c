@@ -9,18 +9,22 @@ int j;//token length
 
 int main() {
     FILE *fpI = NULL, *fpO = NULL;
-    fpI = fopen("../testfile.txt", "r");
-    fpO = fopen("../output.txt", "w");
+    int test = 0;
+    if (test) {
+        fpI = fopen("testfile.txt", "r");
+        fpO = fopen("output.txt", "w");
+    } else {
+        fpI = fopen("../testfile.txt", "r");
+        fpO = fopen("../output.txt", "w");
+
+    }
     while (fgets(buf, MAXLENGTH, fpI)) {
         i = 0;
-        //while (i < strlen(buf)) {
-        while (i < strlen(buf) - 1) {
-        //while (buf[i] != EOF && buf[i] != '\n' && buf[i] != '\0') {
+        while (i < strlen(buf)) {
             symble = getSymble(buf);
             if (symble == UNDEFINED) {
-                return 1;
+                break;
             }
-            printf("%s %s\n", getReserved(symble), token);
             fprintf(fpO, "%s %s\n", getReserved(symble), token);
         }
     }
@@ -33,6 +37,9 @@ int getSymble(char *str) {
     clearToken();
     while (isSpace(str[i])) {
         i++;
+    }
+    if (i >= strlen(str)) {
+        return UNDEFINED;
     }
     if (isLetter(str[i])) {
         while (isLetter(str[i]) || isDigit(str[i])) {
@@ -92,7 +99,10 @@ int getSymble(char *str) {
         return UNDEFINED;
     } else if (isSiglQuo(str[i])) {
         i++;
-        catToken(str[i]);
+        if (isPlus(str[i]) || isMinus(str[i]) || isMult(str[i]) || isDivi(str[i]) || isLetter(str[i]) ||
+            isDigit(str[i])) {
+            catToken(str[i]);
+        }
         i++;
         if (isSiglQuo(str[i])) {
             i++;
@@ -161,13 +171,4 @@ void clearToken() {
 
 void catToken(char c) {
     token[j++] = c;
-}
-
-long long transNum(char *str) {
-    long long num = 0;
-    while (*str) {
-        num = num * 10 + (*str - '0');
-        str++;
-    }
-    return num;
 }
