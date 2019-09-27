@@ -9,14 +9,13 @@ int j;//token length
 
 int main() {
     FILE *fpI = NULL, *fpO = NULL;
-    int test = 0;
-    if (test) {
+    int debug = 1;
+    if (!debug) {
         fpI = fopen("testfile.txt", "r");
         fpO = fopen("output.txt", "w");
     } else {
         fpI = fopen("../testfile.txt", "r");
         fpO = fopen("../output.txt", "w");
-
     }
     while (fgets(buf, MAXLENGTH, fpI)) {
         i = 0;

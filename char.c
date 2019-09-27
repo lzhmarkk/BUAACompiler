@@ -1,5 +1,3 @@
-#include "word.h"
-
 int isSpace(char ch) {
     return ch == ' ' || ch == '\f' || ch == '\n' || ch == '\r' || ch == '\t' || ch == '\v';
 }

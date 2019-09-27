@@ -42,7 +42,7 @@ enum SYMBLE {
 } symble;
 
 #define MAXLENGTH 10240
-#define TOKENLENGTH 30
+#define TOKENLENGTH 300
 
 int isSpace(char ch);
 
@@ -53,7 +53,6 @@ int isSiglQuo(char ch);
 int isLetter(char ch);
 
 int isDigit(char ch);
-
 
 int isComma(char ch);
 
