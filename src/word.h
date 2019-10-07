@@ -1,6 +1,12 @@
 #ifndef WORDANALYZER_C_WORD_H
 #define WORDANALYZER_C_WORD_H
 
+#include "const.h"
+
+char buf[MAXLENGTH];
+char token[TOKENLENGTH];
+int i;
+
 enum SYMBLE {
     UNDEFINED,
     IDENFR,
@@ -40,9 +46,6 @@ enum SYMBLE {
     LBRACE,
     RBRACE
 } symble;
-
-#define MAXLENGTH 10240
-#define TOKENLENGTH 300
 
 int isSpace(char ch);
 
@@ -96,7 +99,4 @@ void catToken(char c);
 
 char *getReserved(int s);
 
-extern char buf[MAXLENGTH];
-extern char token[TOKENLENGTH];
-extern int i;
 #endif

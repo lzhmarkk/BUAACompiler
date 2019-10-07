@@ -1,15 +1,13 @@
 #include <stdio.h>
 #include "word.h"
 #include <string.h>
+#include "syntax.h"
 
-char buf[MAXLENGTH] = {};
-char token[TOKENLENGTH] = {};
-int i;
 int j;//token length
 
 int main() {
     FILE *fpI = NULL, *fpO = NULL;
-    if (1) {
+    if (0) {
         fpI = fopen("testfile.txt", "r");
         fpO = fopen("output.txt", "w");
     } else {
@@ -23,7 +21,10 @@ int main() {
             if (symble == UNDEFINED) {
                 break;
             }
-            fprintf(fpO, "%s %s\n", getReserved(symble), token);
+            //fprintf(fpO, "%s %s\n", getReserved(symble), token);
+            symbleList[wp] = symble;
+            strcpy(tokenList[wp], token);
+            wp++;
         }
     }
     fclose(fpI);
