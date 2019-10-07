@@ -79,8 +79,4 @@ void assert(enum SYMBLE a, enum SYMBLE b);
 
 void asserts(enum SYMBLE a, enum SYMBLE b1, enum SYMBLE b2);
 
-int isRetFunc(char *func);
-
-int isUnRetFunc(char *func);
-
 #endif //WORDANALYZER_C_SYNTAX_Hgi

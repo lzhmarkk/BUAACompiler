@@ -1,5 +1,6 @@
 #include "syntax.h"
 #include "word.h"
+#include "symbleTable.h"
 
 /**
  * 程序
@@ -125,6 +126,7 @@ void explnheadDef() {
     if (symbleList[wp] == INTTK || symbleList[wp] == CHARTK) {
         wp++;
         idenDef();
+        addToTable(1, tokenList[wp - 1]);
     } else {
         error();
     }
@@ -187,6 +189,7 @@ void unRetFuncDef() {
     assert(symbleList[wp], VOIDTK);
     wp++;
     idenDef();
+    addToTable(0, tokenList[wp - 1]);
     assert(symbleList[wp], LPARENT);
     wp++;
     paraDef();
