@@ -3,4 +3,4 @@ project(wordAnalyzer_C C)
 
 set(CMAKE_C_STANDARD 90)
 
-add_executable(wordAnalyzer_C main.c word.h reserved.c char.c)
+add_executable(wordAnalyzer_C src/main.c src/word.h src/reserved.c src/char.c src/symble.c)

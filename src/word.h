@@ -96,4 +96,7 @@ void catToken(char c);
 
 char *getReserved(int s);
 
+extern char buf[MAXLENGTH];
+extern char token[TOKENLENGTH];
+extern int i;
 #endif

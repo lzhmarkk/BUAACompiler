@@ -2,5 +2,5 @@ cmake-build-clang/
 cmake-build-debug/
 .idea/
 test/
-output.txt
-testfile.txt
+test/output.txt
+test/testfile.txt
