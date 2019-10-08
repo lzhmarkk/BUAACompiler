@@ -4,10 +4,10 @@
 #include "syntax.h"
 
 int j;//token length
+FILE *fpI = NULL, *fpO = NULL;
 
 int main() {
-    FILE *fpI = NULL, *fpO = NULL;
-    if (0) {
+    if (1) {
         fpI = fopen("testfile.txt", "r");
         fpO = fopen("output.txt", "w");
     } else {
@@ -44,4 +44,13 @@ void clearToken() {
 
 void catToken(char c) {
     token[j++] = c;
+}
+
+void printWord() {
+    fprintf(fpO, "%s %s\n", getReserved(symbleList[wp]), tokenList[wp]);
+    wp++;
+}
+
+void printSyntax(char *msg) {
+    fprintf(fpO, "%s\n", msg);
 }

@@ -79,4 +79,8 @@ void assert(enum SYMBLE a, enum SYMBLE b);
 
 void asserts(enum SYMBLE a, enum SYMBLE b1, enum SYMBLE b2);
 
+void printWord();
+
+void printSyntax(char *msg);
+
 #endif //WORDANALYZER_C_SYNTAX_Hgi
