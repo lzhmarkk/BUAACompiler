@@ -27,7 +27,7 @@ void idenDef();
 
 void explnheadDef();
 
-void varyExplnDef();
+void varyExpln();
 
 void varyDef();
 
@@ -73,7 +73,7 @@ void writeSentDef();
 
 void retDef();
 
-int error();
+int error(char *msg);
 
 void assert(enum SYMBLE a, enum SYMBLE b);
 

@@ -27,6 +27,8 @@ int main() {
             wp++;
         }
     }
+    wp = 0;
+    programDef();
     fclose(fpI);
     fclose(fpO);
     return 0;
