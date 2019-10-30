@@ -70,6 +70,7 @@ void constDef() {
         while (1) {
             if (symbleList[wp] == IDENFR) {
                 idenDef();
+                addToTable(tokenList[wp - 1], CONST, INT, 0, 0);
             } else error("conDef");
             assert(symbleList[wp], ASSIGN);
             printWord();
@@ -85,6 +86,7 @@ void constDef() {
         while (1) {
             if (symbleList[wp] == IDENFR) {
                 idenDef();
+                addToTable(tokenList[wp - 1], CONST, CHAR, 0, 0);
             } else error("constDef");
             assert(symbleList[wp], ASSIGN);
             printWord();
@@ -134,9 +136,10 @@ void idenDef() {
  */
 void explnheadDef() {
     if (symbleList[wp] == INTTK || symbleList[wp] == CHARTK) {
+        enum Type t = symbleList[wp] == INTTK ? INT : symbleList[wp] == CHARTK ? CHAR : VOID;
         printWord();
         idenDef();
-        addToTable(1, tokenList[wp - 1]);
+        addToTable(tokenList[wp - 1], FUNC, VOID, 0, 2, 666, t);
     } else {
         error("explnheadDef");
     }
@@ -148,7 +151,7 @@ void explnheadDef() {
  */
 void varyExpln() {
     while ((symbleList[wp] == INTTK || symbleList[wp] == CHARTK) &&
-           symbleList[wp + 1 == IDENFR] && symbleList[wp + 2] != LPARENT) {
+           symbleList[wp + 1] == IDENFR && symbleList[wp + 2] != LPARENT) {
         varyDef();
         assert(symbleList[wp], SEMICN);
         printWord();
@@ -161,14 +164,20 @@ void varyExpln() {
  */
 void varyDef() {
     asserts(symbleList[wp], INTTK, CHARTK);
+    enum Type t = symbleList[wp] == INTTK ? INT : symbleList[wp] == CHARTK ? CHAR : VOID;
     printWord();
     while (1) {
         idenDef();
+        char *name = tokenList[wp];
         if (symbleList[wp] == LBRACK) {
             printWord();
             unsgIntDef();
+            int arraySize = tokenList[wp - 1];//todo
             assert(symbleList[wp], RBRACK);
             printWord();
+            addToTable(name, VAR, ARRAY, 0, 3, t, arraySize, 0);
+        } else {
+            addToTable(name, VAR, t, 0, 0);
         }
         if (symbleList[wp] == COMMA) {
             printWord();
@@ -204,7 +213,7 @@ void unRetFuncDef() {
     assert(symbleList[wp], VOIDTK);
     printWord();
     idenDef();
-    addToTable(0, tokenList[wp - 1]);
+    addToTable(tokenList[wp - 1], FUNC, VOID, 0, 2, 888, VOID);
     assert(symbleList[wp], LPARENT);
     printWord();
     paraDef();
@@ -238,9 +247,11 @@ void mutiSentDef() {
 void paraDef() {
     if (symbleList[wp] != RPARENT) {
         while (1) {
-            if (symbleList[wp] != INTTK && symbleList[wp] != CHARTK)error("paraDef");
+            asserts(symbleList[wp], INTTK, CHARTK);
+            enum Type t = symbleList[wp] == INTTK ? INT : symbleList[wp] == CHARTK ? CHAR : VOID;
             printWord();
             idenDef();
+            addToTable(tokenList[wp - 1], PARA, t, 0, 0);
             if (symbleList[wp] == COMMA) {
                 printWord();
                 continue;
