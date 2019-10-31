@@ -7,7 +7,7 @@ int j;//token length
 FILE *fpI = NULL, *fpO = NULL;
 
 int main() {
-    if (1) {
+    if (0) {
         fpI = fopen("testfile.txt", "r");
         fpO = fopen("output.txt", "w");
     } else {

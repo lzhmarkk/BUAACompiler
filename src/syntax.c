@@ -19,14 +19,17 @@ void programDef() {
         if ((symbleList[wp] == INTTK || symbleList[wp] == CHARTK) &&
             symbleList[wp + 1] == IDENFR &&
             symbleList[wp + 2] == LPARENT) {
+            level++;
             retFuncDef();
         }
         if (symbleList[wp] == VOIDTK &&
             symbleList[wp + 1] == IDENFR &&
             symbleList[wp + 2] == LPARENT) {
+            level++;
             unRetFuncDef();
         }
     }
+    level++;
     mainDef();
     printSyntax("<程序>");
 }
@@ -70,7 +73,7 @@ void constDef() {
         while (1) {
             if (symbleList[wp] == IDENFR) {
                 idenDef();
-                addToTable(tokenList[wp - 1], CONST, INT, 0, 0);
+                addToTable(tokenList[wp - 1], CONST, INT, level, 0);
             } else error("conDef");
             assert(symbleList[wp], ASSIGN);
             printWord();
@@ -86,7 +89,7 @@ void constDef() {
         while (1) {
             if (symbleList[wp] == IDENFR) {
                 idenDef();
-                addToTable(tokenList[wp - 1], CONST, CHAR, 0, 0);
+                addToTable(tokenList[wp - 1], CONST, CHAR, level, 0);
             } else error("constDef");
             assert(symbleList[wp], ASSIGN);
             printWord();
@@ -174,9 +177,9 @@ void varyDef() {
             unsgIntDef();
             assert(symbleList[wp], RBRACK);
             printWord();
-            addToTable(name, VAR, ARRAY, 0, 3, t, &tokenList[wp - 2], 0);
+            addToTable(name, VAR, ARRAY, level, 3, t, &tokenList[wp - 2], 0);
         } else {
-            addToTable(name, VAR, t, 0, 0);
+            addToTable(name, VAR, t, level, 0);
         }
         if (symbleList[wp] == COMMA) {
             printWord();
@@ -250,7 +253,7 @@ void paraDef() {
             enum Type t = symbleList[wp] == INTTK ? INT : symbleList[wp] == CHARTK ? CHAR : VOID;
             printWord();
             idenDef();
-            addToTable(tokenList[wp - 1], PARA, t, 0, 0);
+            addToTable(tokenList[wp - 1], PARA, t, level, 0);
             if (symbleList[wp] == COMMA) {
                 printWord();
                 continue;

@@ -5,6 +5,8 @@
 #include "const.h"
 #include "syntax.h"
 
+int level;
+
 /**
  * 标识符Kind和Type属性
  */
