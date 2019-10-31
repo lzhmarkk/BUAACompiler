@@ -168,14 +168,13 @@ void varyDef() {
     printWord();
     while (1) {
         idenDef();
-        char *name = tokenList[wp];
+        char *name = tokenList[wp - 1];
         if (symbleList[wp] == LBRACK) {
             printWord();
             unsgIntDef();
-            int arraySize = tokenList[wp - 1];//todo
             assert(symbleList[wp], RBRACK);
             printWord();
-            addToTable(name, VAR, ARRAY, 0, 3, t, arraySize, 0);
+            addToTable(name, VAR, ARRAY, 0, 3, t, &tokenList[wp - 2], 0);
         } else {
             addToTable(name, VAR, t, 0, 0);
         }

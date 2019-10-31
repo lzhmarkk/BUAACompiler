@@ -50,6 +50,8 @@ int isRetFunc(char *func);
 
 int isUnRetFunc(char *func);
 
+int str2int(char *str);
+
 struct Table *table;
 
 #endif //WORDANALYZER_C_SYMBLETABLE_H

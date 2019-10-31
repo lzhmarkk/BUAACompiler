@@ -17,7 +17,7 @@ void addToTable(char *name, enum Kind kind, enum Type type, int level, int size,
         //如果新增的是一个数组
         struct ArrayTable *newAT = (struct ArrayTable *) malloc(sizeof(struct ArrayTable));
         newAT->type = va_arg(vl, int);
-        newAT->size = va_arg(vl, int);//todo
+        newAT->size = str2int(va_arg(vl, char*));
         newAT->addr = va_arg(vl, int);
         new->info = newAT;
     } else if (kind == FUNC && type == VOID && size == 2) {
@@ -54,4 +54,14 @@ int isRetFunc(char *func) {
 
 int isUnRetFunc(char *func) {
     return !isRetFunc(func);
+}
+
+int str2int(char *addr) {
+    char *str = addr;
+    int res = 0;
+    while (*str) {
+        res = (*str - '0') + 10 * res;
+        str++;
+    }
+    return res;
 }
