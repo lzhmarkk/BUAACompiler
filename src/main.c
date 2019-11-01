@@ -18,8 +18,11 @@ int main() {
         i = 0;
         while (i < strlen(buf)) {
             symble = getSymble(buf);
-            if (symble == UNDEFINED) {
+            if (symble == END) {
                 break;
+            }else if(symble==UNDEFINED){
+                i++;
+                continue;
             }
             //fprintf(fpO, "%s %s\n", getReserved(symble), token);
             symbleList[wp] = symble;

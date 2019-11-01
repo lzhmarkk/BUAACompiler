@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "const.h"
 
-enum SYMBLE symbleList[WORDSIZE];
+enum SYMBLE symbleList[WORDSIZE];//todo 加上行数
 char tokenList[TOKENLENGTH][WORDSIZE];
 int wp;
 
@@ -41,11 +41,11 @@ void paraDef();
 
 void mainDef();
 
-void expressDef();
+enum Type expressDef();
 
-void itemDef();
+enum Type  itemDef();
 
-void factorDef();
+enum Type  factorDef();
 
 void sentDef();
 
@@ -63,7 +63,7 @@ void retFuncCallDef();
 
 void unRetFuncCallDef();
 
-void assignParaDef();
+void assignParaDef(char *fname);
 
 void sentsDef();
 
@@ -73,7 +73,7 @@ void writeSentDef();
 
 void retDef();
 
-int error(char *msg);
+int panic(char *msg);
 
 void assert(enum SYMBLE a, enum SYMBLE b);
 

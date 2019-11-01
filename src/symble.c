@@ -1,5 +1,6 @@
 #include "word.h"
 #include "string.h"
+#include "error.h"
 
 int getSymble(char *str) {
     clearToken();
@@ -7,7 +8,7 @@ int getSymble(char *str) {
         i++;
     }
     if (i >= strlen(str)) {
-        return UNDEFINED;
+        return END;
     }
     if (isLetter(str[i])) {
         while (isLetter(str[i]) || isDigit(str[i])) {
@@ -51,20 +52,24 @@ int getSymble(char *str) {
         if (isEqu(str[++i])) {
             catToken(str[i]);
             i++;
-            return NEQ;
         }
-        return UNDEFINED;
+        error(symbleList[i], MISS_EQL);
+        return NEQ;
     } else if (isDoubQuo(str[i])) {
         i++;
         while (!isDoubQuo(str[i])) {
             catToken(str[i]);
             i++;
+            if (i >= strlen(str)) {
+                //如果没有右双引号，则直接全部认为字符串
+                error(symbleList[i], MISS_DOUBQUO);
+                break;
+            }
         }
         if (isDoubQuo(str[i])) {
             i++;
-            return STRCON;
         }
-        return UNDEFINED;
+        return STRCON;
     } else if (isSiglQuo(str[i])) {
         i++;
         if (isPlus(str[i]) || isMinus(str[i]) || isMult(str[i]) || isDivi(str[i]) || isLetter(str[i]) ||
@@ -74,9 +79,10 @@ int getSymble(char *str) {
         i++;
         if (isSiglQuo(str[i])) {
             i++;
-            return CHARCON;
+        } else {
+            error(symbleList[i], MISS_SIGLGQUO);
         }
-        return UNDEFINED;
+        return CHARCON;
     } else if (isPlus(str[i])) {
         catToken(str[i]);
         i++;
@@ -126,5 +132,6 @@ int getSymble(char *str) {
         i++;
         return RBRACE;
     }
+    error(symbleList[i], UNRECOGNIZED);
     return UNDEFINED;
 }

@@ -1,6 +1,7 @@
 #include "syntax.h"
 #include "word.h"
 #include "symbleTable.h"
+#include "error.h"
 
 /**
  * 程序
@@ -68,13 +69,18 @@ void constExpln() {
  * 常量定义
  */
 void constDef() {
+    int r;
     if (symbleList[wp] == INTTK) {
         printWord();
         while (1) {
             if (symbleList[wp] == IDENFR) {
                 idenDef();
-                addToTable(tokenList[wp - 1], CONST, INT, level, 0);
-            } else error("conDef");
+                if ((r = checkRedef(tokenList[wp - 1], level)) != SUCCESS) {
+                    error(symbleList[wp - 1], r);
+                } else {
+                    addToTable(tokenList[wp - 1], CONST, INT, level, 0);
+                }
+            } else panic("conDef");
             assert(symbleList[wp], ASSIGN);
             printWord();
             intDef();
@@ -89,20 +95,24 @@ void constDef() {
         while (1) {
             if (symbleList[wp] == IDENFR) {
                 idenDef();
-                addToTable(tokenList[wp - 1], CONST, CHAR, level, 0);
-            } else error("constDef");
+                if ((r = checkRedef(tokenList[wp - 1], level)) != SUCCESS) {
+                    error(symbleList[wp - 1], r);
+                } else {
+                    addToTable(tokenList[wp - 1], CONST, CHAR, level, 0);
+                }
+            } else panic("constDef");
             assert(symbleList[wp], ASSIGN);
             printWord();
             if (symbleList[wp] == CHARCON) {
                 charDef();
-            } else error("constDef");
+            } else panic("constDef");
             if (symbleList[wp] == COMMA) {
                 printWord();
                 continue;
             }
             break;
         }
-    } else error("constDef");
+    } else panic("constDef");
     printSyntax("<常量定义>");
 }
 
@@ -138,13 +148,18 @@ void idenDef() {
  * 声明头部
  */
 void explnheadDef() {
+    int r;
     if (symbleList[wp] == INTTK || symbleList[wp] == CHARTK) {
         enum Type t = symbleList[wp] == INTTK ? INT : symbleList[wp] == CHARTK ? CHAR : VOID;
         printWord();
         idenDef();
-        addToTable(tokenList[wp - 1], FUNC, VOID, 0, 2, 666, t);
+        if ((r = checkRedef(tokenList[wp - 1], 0)) != SUCCESS) {
+            error(symbleList[wp - 1], r);
+        } else {
+            addToTable(tokenList[wp - 1], FUNC, VOID, 0, 2, 666, t);
+        }
     } else {
-        error("explnheadDef");
+        panic("explnheadDef");
     }
     printSyntax("<声明头部>");
 }
@@ -166,6 +181,7 @@ void varyExpln() {
  * 变量定义
  */
 void varyDef() {
+    int r;
     asserts(symbleList[wp], INTTK, CHARTK);
     enum Type t = symbleList[wp] == INTTK ? INT : symbleList[wp] == CHARTK ? CHAR : VOID;
     printWord();
@@ -177,9 +193,17 @@ void varyDef() {
             unsgIntDef();
             assert(symbleList[wp], RBRACK);
             printWord();
-            addToTable(name, VAR, ARRAY, level, 3, t, &tokenList[wp - 2], 0);
+            if ((r = checkRedef(name, level)) != SUCCESS) {
+                error(symbleList[wp - 1], r);
+            } else {
+                addToTable(name, VAR, ARRAY, level, 3, t, &tokenList[wp - 2], 0);
+            }
         } else {
-            addToTable(name, VAR, t, level, 0);
+            if ((r = checkRedef(name, level)) != SUCCESS) {
+                error(symbleList[wp - 1], r);
+            } else {
+                addToTable(name, VAR, t, level, 0);
+            }
         }
         if (symbleList[wp] == COMMA) {
             printWord();
@@ -212,10 +236,15 @@ void retFuncDef() {
  * 无返回值函数定义
  */
 void unRetFuncDef() {
+    int r;
     assert(symbleList[wp], VOIDTK);
     printWord();
     idenDef();
-    addToTable(tokenList[wp - 1], FUNC, VOID, 0, 2, 888, VOID);
+    if ((r = checkRedef(tokenList[wp - 1], level)) != SUCCESS) {
+        error(symbleList[wp - 1], r);
+    } else {
+        addToTable(tokenList[wp - 1], FUNC, VOID, 0, 2, 888, VOID);
+    }
     assert(symbleList[wp], LPARENT);
     printWord();
     paraDef();
@@ -247,13 +276,19 @@ void mutiSentDef() {
  * 参数表
  */
 void paraDef() {
+    int r;
     if (symbleList[wp] != RPARENT) {
         while (1) {
             asserts(symbleList[wp], INTTK, CHARTK);
             enum Type t = symbleList[wp] == INTTK ? INT : symbleList[wp] == CHARTK ? CHAR : VOID;
             printWord();
             idenDef();
-            addToTable(tokenList[wp - 1], PARA, t, level, 0);
+            //如果参数出现重复，忽略该参数
+            if ((r = checkRedef(tokenList[wp - 1], level)) != SUCCESS) {
+                error(symbleList[wp - 1], r);
+            } else {
+                addToTable(tokenList[wp - 1], PARA, t, level, 0);
+            }
             if (symbleList[wp] == COMMA) {
                 printWord();
                 continue;
@@ -287,48 +322,67 @@ void mainDef() {
 /**
  * 表达式
  */
-void expressDef() {
+enum Type expressDef() {
+    enum Type ret = INT;
     if (symbleList[wp] == PLUS || symbleList[wp] == MINU) {
         printWord();
+        itemDef();
+    } else {
+        ret = itemDef();
     }
     while (1) {
-        itemDef();
         if (symbleList[wp] == PLUS || symbleList[wp] == MINU) {
             printWord();
-            continue;
+            ret = INT;
+            itemDef();
+        } else {
+            break;
         }
-        break;
     }
     printSyntax("<表达式>");
+    return ret;
 }
 
 /**
  * 项
  */
-void itemDef() {
+enum Type itemDef() {
+    enum Type ret = INT;
+    ret = factorDef();
     while (1) {
-        factorDef();
         if (symbleList[wp] == MULT || symbleList[wp] == DIV) {
             printWord();
-            continue;
+            ret = INT;
+            factorDef();
+        } else {
+            break;
         }
-        break;
     }
     printSyntax("<项>");
+    return ret;
 }
 
 /**
  * 因子
  */
-void factorDef() {
+enum Type factorDef() {
+    int r;
+    enum Type ret = INT;
     if (symbleList[wp] == IDENFR && symbleList[wp + 1] != LPARENT) {
         idenDef();
+        char *name = tokenList[wp - 1];
+        if ((r = checkExist(name, level)) != SUCCESS) {
+            error(symbleList[wp - 1], r);
+        }
         if (symbleList[wp] == LBRACK) {
             printWord();
-            expressDef();
+            if (expressDef() != INT) {
+                error(symbleList[wp - 1], OFFSET_NOT_INT);
+            }
             assert(symbleList[wp], RBRACK);
             printWord();
         }
+        ret = getType(name, level);
     } else if (symbleList[wp] == LPARENT) {
         printWord();
         expressDef();
@@ -338,12 +392,30 @@ void factorDef() {
         intDef();
     } else if (symbleList[wp] == CHARCON) {
         charDef();
+        ret = CHAR;
     } else if (symbleList[wp] == IDENFR && symbleList[wp + 1] == LPARENT) {
-        if (isRetFunc(tokenList[wp])) {
-            retFuncCallDef();
-        } else error("factorDef");
-    } else { error("factorDef"); }
+        char *name = tokenList[wp];
+        if ((r = checkExist(name, 0)) < 0) {
+            error(symbleList[wp - 1], r);
+            wp += 2;
+            assignParaDef(tokenList[wp - 2]);
+            wp++;
+        } else {
+            if (isRetFunc(name)) {
+                retFuncCallDef();
+                ret = getType(name, 0);
+            } else {
+                error(symbleList[wp - 1], CALL_UNRET_FUNC);
+                wp += 2;
+                assignParaDef(tokenList[wp - 2]);
+                wp++;
+            }
+        }
+    } else {
+        error(symbleList[wp], NOT_A_FACTOR);
+    }
     printSyntax("<因子>");
+    return ret;
 }
 
 /**
@@ -387,9 +459,9 @@ void sentDef() {
                 unRetFuncCallDef();
                 assert(symbleList[wp], SEMICN);
                 printWord();
-            } else error("sentDef");
-        } else error("sentDef");
-    } else error("sentDef");
+            } else panic("sentDef");
+        } else panic("sentDef");
+    } else panic("sentDef");
     printSyntax("<语句>");
 }
 
@@ -397,19 +469,25 @@ void sentDef() {
  * 赋值语句
  */
 void assignSentDef() {
+    int r;
     idenDef();
+    if ((r = checkExist(tokenList[wp - 1], level)) != SUCCESS) {
+        error(symbleList[wp - 1], r);
+    }
     if (symbleList[wp] == ASSIGN) {
         printWord();
         expressDef();
     } else if (symbleList[wp] == LBRACK) {
         printWord();
-        expressDef();
+        if (expressDef() != INT) {
+            error(symbleList[wp - 1], OFFSET_NOT_INT);
+        }
         assert(symbleList[wp], RBRACK);
         printWord();
         assert(symbleList[wp], ASSIGN);
         printWord();
         expressDef();
-    } else error("assignSentDef");
+    } else panic("assignSentDef");
     printSyntax("<赋值语句>");
 }
 
@@ -436,11 +514,15 @@ void conditSentDef() {
  * 条件
  */
 void conditDef() {
-    expressDef();
+    if (expressDef() != INT) {
+        error(symbleList[wp - 1], CONDIT_ILLEGAL);
+    }
     if (symbleList[wp] == LSS || symbleList[wp] == LEQ || symbleList[wp] == GRE || symbleList[wp] == GEQ ||
         symbleList[wp] == EQL || symbleList[wp] == NEQ) {
         printWord();
-        expressDef();
+        if (expressDef() != INT) {
+            error(symbleList[wp - 1], CONDIT_ILLEGAL);
+        }
     }
     printSyntax("<条件>");
 
@@ -450,6 +532,7 @@ void conditDef() {
  * 循环语句
  */
 void loopDef() {
+    int r;
     if (symbleList[wp] == WHILETK) {
         printWord();
         assert(symbleList[wp], LPARENT);
@@ -473,6 +556,9 @@ void loopDef() {
         assert(symbleList[wp], LPARENT);
         printWord();
         idenDef();
+        if ((r = checkExist(tokenList[wp - 1], level)) != SUCCESS) {
+            error(symbleList[wp - 1], r);
+        }
         assert(symbleList[wp], ASSIGN);
         printWord();
         expressDef();
@@ -482,16 +568,22 @@ void loopDef() {
         assert(symbleList[wp], SEMICN);
         printWord();
         idenDef();
+        if ((r = checkExist(tokenList[wp - 1], level)) != SUCCESS) {
+            error(symbleList[wp - 1], r);
+        }
         assert(symbleList[wp], ASSIGN);
         printWord();
         idenDef();
+        if ((r = checkExist(tokenList[wp - 1], level)) != SUCCESS) {
+            error(symbleList[wp - 1], r);
+        }
         asserts(symbleList[wp], PLUS, MINU);
         printWord();
         stepDef();
         assert(symbleList[wp], RPARENT);
         printWord();
         sentDef();
-    } else error("loopDef");
+    } else panic("loopDef");
     printSyntax("<循环语句>");
 }
 
@@ -507,10 +599,14 @@ void stepDef() {
  * 有返回值函数调用语句
  */
 void retFuncCallDef() {
+    int r;
     idenDef();
+    if ((r = checkExist(tokenList[wp - 1], 0)) != SUCCESS) {
+        error(symbleList[wp - 1], r);
+    }
     assert(symbleList[wp], LPARENT);
     printWord();
-    assignParaDef();
+    assignParaDef(tokenList[wp - 2]);
     assert(symbleList[wp], RPARENT);
     printWord();
     printSyntax("<有返回值函数调用语句>");
@@ -520,10 +616,14 @@ void retFuncCallDef() {
  * 无返回值函数调用语句
  */
 void unRetFuncCallDef() {
+    int r;
     idenDef();
+    if ((r = checkExist(tokenList[wp - 1], level)) != SUCCESS) {
+        error(symbleList[wp - 1], r);
+    }
     assert(symbleList[wp], LPARENT);
     printWord();
-    assignParaDef();
+    assignParaDef(tokenList[wp - 2]);
     assert(symbleList[wp], RPARENT);
     printWord();
     printSyntax("<无返回值函数调用语句>");
@@ -532,16 +632,26 @@ void unRetFuncCallDef() {
 /**
  * 值参数表
  */
-void assignParaDef() {
+void assignParaDef(char *fname) {
+    int paraIndex = 0;
     if (symbleList[wp] != RPARENT) {
         while (1) {
-            expressDef();
+            enum Type type = expressDef();
+            int r;
+            paraIndex++;
+            if ((r = checkPara1(fname, paraIndex, type)) != SUCCESS) {
+                error(symbleList[wp - 1], r);
+            }
             if (symbleList[wp] == COMMA) {
                 printWord();
                 continue;
             }
             break;
         }
+    }
+    int r;
+    if ((r = checkPara2(fname, paraIndex)) != SUCCESS) {
+        error(symbleList[wp], r);
     }
     printSyntax("<值参数表>");
 }
@@ -563,12 +673,16 @@ void sentsDef() {
  * 读语句
  */
 void readSentDef() {
+    int r;
     assert(symbleList[wp], SCANFTK);
     printWord();
     assert(symbleList[wp], LPARENT);
     printWord();
     while (1) {
         idenDef();
+        if ((r = checkExist(tokenList[wp - 1], level)) != SUCCESS) {
+            error(symbleList[wp - 1], r);
+        }
         if (symbleList[wp] == COMMA) {
             printWord();
             continue;
@@ -584,6 +698,7 @@ void readSentDef() {
  * 写语句
  */
 void writeSentDef() {
+    int r;
     assert(symbleList[wp], PRINTFTK);
     printWord();
     assert(symbleList[wp], LPARENT);
@@ -594,7 +709,7 @@ void writeSentDef() {
         } else if (symbleList[wp] == COMMA) {
             printWord();
             expressDef();
-        } else error("writeSentDef");
+        } else panic("writeSentDef");
     } else {
         expressDef();
     }
@@ -618,7 +733,7 @@ void retDef() {
     printSyntax("<返回语句>");
 }
 
-int error(char *msg) {
+int panic(char *msg) {
     printf("%d:panic at %s\n", wp, msg);
     while (1);
 }
@@ -627,7 +742,7 @@ void assert(enum SYMBLE a, enum SYMBLE b) {
     if (a == b) {
         return;
     } else {
-        error("assert failed");
+        panic("assert failed");
     }
 }
 
@@ -635,6 +750,6 @@ void asserts(enum SYMBLE a, enum SYMBLE b1, enum SYMBLE b2) {
     if (a == b1 || a == b2) {
         return;
     } else {
-        error("assert failed");
+        panic("assert failed");
     }
 }

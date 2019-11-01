@@ -46,13 +46,23 @@ struct Table {
     struct Table *next;
 };
 
-void addToTable(char *name, enum Kind kind, enum Type type, int level, int size, ...);
+void addToTable(char *name, enum Kind kind, enum Type type, int leve, int size, ...);
 
 int isRetFunc(char *func);
 
 int isUnRetFunc(char *func);
 
-int str2int(char *str);
+int checkRedef(char *name, int leve);
+
+int checkExist(char *name, int leve);
+
+int checkPara1(char *fname, int index, enum Type type);
+
+int checkPara2(char *fname, int paraIndex);
+
+enum Type getType(char *name, int leve);
+
+int __str2int(char *str);
 
 struct Table *table;
 

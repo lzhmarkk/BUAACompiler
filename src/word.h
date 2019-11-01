@@ -8,6 +8,7 @@ char token[TOKENLENGTH];
 int i;
 
 enum SYMBLE {
+    END,
     UNDEFINED,
     IDENFR,
     INTCON,
