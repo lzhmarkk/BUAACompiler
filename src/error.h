@@ -45,4 +45,7 @@ void insertError(struct ErrMsg *new);
 void printError();
 
 struct ErrMsg *err;
+enum Type retType;
+int checkRet;
+int hasRet;
 #endif //WORDANALYZER_C_ERROR_H

@@ -75,6 +75,9 @@ int getSymble(char *str) {
         if (isPlus(str[i]) || isMinus(str[i]) || isMult(str[i]) || isDivi(str[i]) || isLetter(str[i]) ||
             isDigit(str[i])) {
             catToken(str[i]);
+        } else {
+            error(symbleList[i], UNRECOGNIZED);
+            catToken(str[i]);
         }
         i++;
         if (isSiglQuo(str[i])) {

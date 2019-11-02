@@ -158,6 +158,7 @@ void explnheadDef() {
         } else {
             addToTable(tokenList[wp - 1], FUNC, VOID, 0, 2, 666, t);
         }
+        retType = t;
     } else {
         panic("explnheadDef");
     }
@@ -219,6 +220,8 @@ void varyDef() {
  */
 void retFuncDef() {
     explnheadDef();
+    checkRet = 1;
+    hasRet = 0;
     assert(symbleList[wp], LPARENT);
     printWord();
     paraDef();
@@ -229,6 +232,10 @@ void retFuncDef() {
     mutiSentDef();
     assert(symbleList[wp], RBRACE);
     printWord();
+    if (hasRet == 0) {
+        error(symbleList[wp - 1], MISS_RET);
+    }
+    checkRet = 0;
     printSyntax("<有返回值函数定义>");
 }
 
@@ -240,11 +247,14 @@ void unRetFuncDef() {
     assert(symbleList[wp], VOIDTK);
     printWord();
     idenDef();
-    if ((r = checkRedef(tokenList[wp - 1], level)) != SUCCESS) {
+    if ((r = checkRedef(tokenList[wp - 1], 0)) != SUCCESS) {
         error(symbleList[wp - 1], r);
     } else {
         addToTable(tokenList[wp - 1], FUNC, VOID, 0, 2, 888, VOID);
     }
+    retType = VOID;
+    checkRet = 1;
+    hasRet = 0;
     assert(symbleList[wp], LPARENT);
     printWord();
     paraDef();
@@ -255,6 +265,7 @@ void unRetFuncDef() {
     mutiSentDef();
     assert(symbleList[wp], RBRACE);
     printWord();
+    checkRet = 0;
     printSyntax("<无返回值函数定义>");
 }
 
@@ -303,6 +314,9 @@ void paraDef() {
  * 主函数
  */
 void mainDef() {
+    retType = VOID;
+    checkRet = 1;
+    hasRet = 0;
     assert(symbleList[wp], VOIDTK);
     printWord();
     assert(symbleList[wp], MAINTK);
@@ -316,6 +330,7 @@ void mainDef() {
     mutiSentDef();
     assert(symbleList[wp], RBRACE);
     printWord();
+    checkRet = 0;
     printSyntax("<主函数>");
 }
 
@@ -724,11 +739,21 @@ void writeSentDef() {
 void retDef() {
     assert(symbleList[wp], RETURNTK);
     printWord();
+    hasRet = 1;
     if (symbleList[wp] == LPARENT) {
         printWord();
-        expressDef();
+        enum Type ret = expressDef();
+        if (checkRet) {
+            if (retType == VOID) {
+                error(1, FORBID_RET);
+            } else if (ret != retType) {
+                error(2, MISMATCH_RET);
+            }
+        }
         assert(symbleList[wp], RPARENT);
         printWord();
+    } else if (checkRet && retType != VOID) {
+        error(2, MISMATCH_RET);
     }
     printSyntax("<返回语句>");
 }
