@@ -18,6 +18,9 @@ int getSymble(char *str, int l) {
         int r = isReserved(token);
         return r == UNDEFINED ? IDENFR : r;
     } else if (isDigit(str[i])) {
+        if (str[i] == '0' && isDigit(str[i + 1])) {
+            error(l, ZERO_AHEAD);
+        }
         while (isDigit(str[i])) {
             catToken(str[i]);
             i++;
@@ -57,6 +60,9 @@ int getSymble(char *str, int l) {
     } else if (isDoubQuo(str[i])) {
         i++;
         while (!isDoubQuo(str[i])) {
+            if (!(str[i] == 32 || str[i] == 33 || (str[i] >= 35 && str[i] <= 126))) {
+                error(l, STR_ILLEGAL_CHAR);
+            }
             catToken(str[i]);
             i++;
             if (i >= strlen(str)) {

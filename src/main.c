@@ -69,7 +69,7 @@ void printSyntax(char *msg) {
 void printError() {
     struct ErrMsg *e;
     for (e = err; e != NULL; e = e->next) {
-        //fprintf(fpE, "%d %c : %s\n", e->line, e->code, e->msg);
+        fprintf(fpE, "%d %c : %s\n", e->line, e->code, e->msg);
         printf("%d %c : %s\n", e->line, e->code, e->msg);
     }
 }

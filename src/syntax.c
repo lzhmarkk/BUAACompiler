@@ -34,7 +34,7 @@ void programDef() {
     mainDef();
     printSyntax("<程序>");
 }
-//todo checkAll
+
 //todo check discuss
 /**
  * 字符
@@ -51,7 +51,7 @@ void stringDef() {
     assert(symbleList[wp], STRCON);
     printWord();
     printSyntax("<字符串>");
-}//todo "^&&%&@"
+}
 
 /**
  * 常量说明
@@ -184,7 +184,7 @@ void unsgIntDef() {
     assert(symbleList[wp], INTCON);
     printWord();
     printSyntax("<无符号整数>");
-}//todo 003
+}
 
 /**
  * 标识符

@@ -31,6 +31,8 @@
 #define MISS_SIGLGQUO -20
 #define MISS_DOUBQUO -21
 #define MISS_EQL -22
+#define ZERO_AHEAD -23
+#define STR_ILLEGAL_CHAR -24
 
 struct ErrMsg {
     int line;
