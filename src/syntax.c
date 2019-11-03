@@ -12,8 +12,7 @@ void programDef() {
     }
     if ((symbleList[wp] == INTTK || symbleList[wp] == CHARTK) &&
         symbleList[wp + 1] == IDENFR &&
-        (symbleList[wp + 2] == LBRACK || symbleList[wp + 2] == COMMA ||
-         symbleList[wp + 2] == SEMICN)) {
+        symbleList[wp + 2] != LPARENT) {
         varyExpln();
     }
     while (symbleList[wp + 1] != MAINTK) {
@@ -34,7 +33,7 @@ void programDef() {
     mainDef();
     printSyntax("<程序>");
 }
-
+//todo checkAll
 /**
  * 字符
  */
@@ -59,11 +58,9 @@ void constExpln() {
     while (symbleList[wp] == CONSTTK) {
         printWord();
         constDef();
-        //assert(symbleList[wp], SEMICN);
-        if(symbleList[wp]!=SEMICN){
-            error(symbleList[wp],MISS_SEMI);
-        }
-        printWord();
+        if (symbleList[wp] != SEMICN) {
+            error(symbleList[wp], MISS_SEMI);
+        } else { printWord(); }
     }
     printSyntax("<常量说明>");
 }
@@ -71,7 +68,7 @@ void constExpln() {
 /**
  * 常量定义
  */
-void constDef() {
+void constDef() {//todo const int a = 'a';
     int r;
     if (symbleList[wp] == INTTK) {
         printWord();
@@ -89,6 +86,9 @@ void constDef() {
             intDef();
             if (symbleList[wp] == COMMA) {
                 printWord();
+                continue;
+            } else if (symbleList[wp] == IDENFR) {
+                error(1, MISS_SEMI);
                 continue;
             }
             break;
@@ -111,6 +111,9 @@ void constDef() {
             } else panic("constDef");
             if (symbleList[wp] == COMMA) {
                 printWord();
+                continue;
+            } else if (symbleList[wp] == IDENFR) {
+                error(1, MISS_SEMI);
                 continue;
             }
             break;
@@ -175,11 +178,9 @@ void varyExpln() {
     while ((symbleList[wp] == INTTK || symbleList[wp] == CHARTK) &&
            symbleList[wp + 1] == IDENFR && symbleList[wp + 2] != LPARENT) {
         varyDef();
-        //assert(symbleList[wp], SEMICN);
-        if(symbleList[wp]!=SEMICN){
-            error(symbleList[wp],MISS_SEMI);
-        }
-        printWord();
+        if (symbleList[wp] != SEMICN) {
+            error(symbleList[wp], MISS_SEMI);
+        } else { printWord(); }
     }
     printSyntax("<变量说明>");
 }
@@ -198,8 +199,9 @@ void varyDef() {
         if (symbleList[wp] == LBRACK) {
             printWord();
             unsgIntDef();
-            assert(symbleList[wp], RBRACK);
-            printWord();
+            if (symbleList[wp] != RBRACK) {
+                error(symbleList[wp], MISS_RBRACK);
+            } else { printWord(); }
             if ((r = checkRedef(name, level)) != SUCCESS) {
                 error(symbleList[wp - 1], r);
             } else {
@@ -214,6 +216,9 @@ void varyDef() {
         }
         if (symbleList[wp] == COMMA) {
             printWord();
+            continue;
+        } else if (symbleList[wp] == IDENFR) {
+            error(symbleList[wp], MISS_SEMI);
             continue;
         }
         break;
@@ -231,8 +236,9 @@ void retFuncDef() {
     assert(symbleList[wp], LPARENT);
     printWord();
     paraDef();
-    assert(symbleList[wp], RPARENT);
-    printWord();
+    if (symbleList[wp] != RPARENT) {
+        error(symbleList[wp], MISS_RPARENT);
+    } else { printWord(); }
     assert(symbleList[wp], LBRACE);
     printWord();
     mutiSentDef();
@@ -264,8 +270,9 @@ void unRetFuncDef() {
     assert(symbleList[wp], LPARENT);
     printWord();
     paraDef();
-    assert(symbleList[wp], RPARENT);
-    printWord();
+    if (symbleList[wp] != RPARENT) {
+        error(symbleList[wp], MISS_RPARENT);
+    } else { printWord(); }
     assert(symbleList[wp], LBRACE);
     printWord();
     mutiSentDef();
@@ -294,7 +301,7 @@ void mutiSentDef() {
  */
 void paraDef() {
     int r;
-    if (symbleList[wp] != RPARENT) {
+    if (symbleList[wp] == INTTK || symbleList[wp] == CHARTK) {
         while (1) {
             asserts(symbleList[wp], INTTK, CHARTK);
             enum Type t = symbleList[wp] == INTTK ? INT : symbleList[wp] == CHARTK ? CHAR : VOID;
@@ -329,8 +336,9 @@ void mainDef() {
     printWord();
     assert(symbleList[wp], LPARENT);
     printWord();
-    assert(symbleList[wp], RPARENT);
-    printWord();
+    if (symbleList[wp] != RPARENT) {
+        error(symbleList[wp], MISS_RPARENT);
+    } else { printWord(); }
     assert(symbleList[wp], LBRACE);
     printWord();
     mutiSentDef();
@@ -400,15 +408,17 @@ enum Type factorDef() {
             if (expressDef() != INT) {
                 error(symbleList[wp - 1], OFFSET_NOT_INT);
             }
-            assert(symbleList[wp], RBRACK);
-            printWord();
+            if (symbleList[wp] != RBRACK) {
+                error(symbleList[wp], MISS_RBRACK);
+            } else { printWord(); }
         }
         ret = getType(name, level);
     } else if (symbleList[wp] == LPARENT) {
         printWord();
         expressDef();
-        assert(symbleList[wp], RPARENT);
-        printWord();
+        if (symbleList[wp] != RPARENT) {
+            error(symbleList[wp], MISS_RPARENT);
+        } else { printWord(); }
     } else if (symbleList[wp] == INTCON || symbleList[wp] == PLUS || symbleList[wp] == MINU) {
         intDef();
     } else if (symbleList[wp] == CHARCON) {
@@ -450,55 +460,43 @@ void sentDef() {
         printWord();
     } else if (symbleList[wp] == SCANFTK) {
         readSentDef();
-        //assert(symbleList[wp], SEMICN);
-        if(symbleList[wp]!=SEMICN){
-            error(symbleList[wp],MISS_SEMI);
-        }
-        printWord();
+        if (symbleList[wp] != SEMICN) {
+            error(symbleList[wp], MISS_SEMI);
+        } else { printWord(); }
     } else if (symbleList[wp] == WHILETK || symbleList[wp] == DOTK || symbleList[wp] == FORTK) {
         loopDef();
     } else if (symbleList[wp] == IFTK) {
         conditSentDef();
     } else if (symbleList[wp] == RETURNTK) {
         retDef();
-        //assert(symbleList[wp], SEMICN);
-        if(symbleList[wp]!=SEMICN){
-            error(symbleList[wp],MISS_SEMI);
-        }
-        printWord();
+        if (symbleList[wp] != SEMICN) {
+            error(symbleList[wp], MISS_SEMI);
+        } else { printWord(); }
     } else if (symbleList[wp] == PRINTFTK) {
         writeSentDef();
-        //assert(symbleList[wp], SEMICN);
-        if(symbleList[wp]!=SEMICN){
-            error(symbleList[wp],MISS_SEMI);
-        }
-        printWord();
+        if (symbleList[wp] != SEMICN) {
+            error(symbleList[wp], MISS_SEMI);
+        } else { printWord(); }
     } else if (symbleList[wp] == SEMICN) {
         printWord();
     } else if (symbleList[wp] == IDENFR) {
         if (symbleList[wp + 1] == ASSIGN || symbleList[wp + 1] == LBRACK) {
             assignSentDef();
-            //assert(symbleList[wp], SEMICN);
-            if(symbleList[wp]!=SEMICN){
-                error(symbleList[wp],MISS_SEMI);
-            }
-            printWord();
+            if (symbleList[wp] != SEMICN) {
+                error(symbleList[wp], MISS_SEMI);
+            } else { printWord(); }
         } else if (symbleList[wp + 1] == LPARENT) {
             if (isRetFunc(tokenList[wp])) {
                 retFuncCallDef();
-                //assert(symbleList[wp], SEMICN);
-                if(symbleList[wp]!=SEMICN){
-                    error(symbleList[wp],MISS_SEMI);
-                }
-                printWord();
+                if (symbleList[wp] != SEMICN) {
+                    error(symbleList[wp], MISS_SEMI);
+                } else { printWord(); }
             } else if (isUnRetFunc(tokenList[wp])) {
                 unRetFuncCallDef();
-                //assert(symbleList[wp], SEMICN);
-                if(symbleList[wp]!=SEMICN){
-                    error(symbleList[wp],MISS_SEMI);
-                }
-                printWord();
-            } else panic("sentDef");
+                if (symbleList[wp] != SEMICN) {
+                    error(symbleList[wp], MISS_SEMI);
+                } else { printWord(); }
+            } else panic("sentDef");//todo panic
         } else panic("sentDef");
     } else panic("sentDef");
     printSyntax("<语句>");
@@ -523,8 +521,9 @@ void assignSentDef() {
         if (expressDef() != INT) {
             error(symbleList[wp - 1], OFFSET_NOT_INT);
         }
-        assert(symbleList[wp], RBRACK);
-        printWord();
+        if (symbleList[wp] != RBRACK) {
+            error(symbleList[wp], MISS_RBRACK);
+        } else { printWord(); }
         assert(symbleList[wp], ASSIGN);
         printWord();
         expressDef();
@@ -541,8 +540,9 @@ void conditSentDef() {
     assert(symbleList[wp], LPARENT);
     printWord();
     conditDef();
-    assert(symbleList[wp], RPARENT);
-    printWord();
+    if (symbleList[wp] != RPARENT) {
+        error(symbleList[wp], MISS_RPARENT);
+    } else { printWord(); }
     sentDef();
     if (symbleList[wp] == ELSETK) {
         printWord();
@@ -579,8 +579,9 @@ void loopDef() {
         assert(symbleList[wp], LPARENT);
         printWord();
         conditDef();
-        assert(symbleList[wp], RPARENT);
-        printWord();
+        if (symbleList[wp] != RPARENT) {
+            error(symbleList[wp], MISS_RPARENT);
+        } else { printWord(); }
         sentDef();
     } else if (symbleList[wp] == DOTK) {
         printWord();
@@ -590,8 +591,9 @@ void loopDef() {
         assert(symbleList[wp], LPARENT);
         printWord();
         conditDef();
-        assert(symbleList[wp], RPARENT);
-        printWord();
+        if (symbleList[wp] != RPARENT) {
+            error(symbleList[wp], MISS_RPARENT);
+        } else { printWord(); }
     } else if (symbleList[wp] == FORTK) {
         printWord();
         assert(symbleList[wp], LPARENT);
@@ -605,17 +607,13 @@ void loopDef() {
         assert(symbleList[wp], ASSIGN);
         printWord();
         expressDef();
-        //assert(symbleList[wp], SEMICN);
-        if(symbleList[wp]!=SEMICN){
-            error(symbleList[wp],MISS_SEMI);
-        }
-        printWord();
+        if (symbleList[wp] != SEMICN) {
+            error(symbleList[wp], MISS_SEMI);
+        } else { printWord(); }
         conditDef();
-        //assert(symbleList[wp], SEMICN);
-        if(symbleList[wp]!=SEMICN){
-            error(symbleList[wp],MISS_SEMI);
-        }
-        printWord();
+        if (symbleList[wp] != SEMICN) {
+            error(symbleList[wp], MISS_SEMI);
+        } else { printWord(); }
         idenDef();
         if ((r = checkExist(tokenList[wp - 1], level)) != SUCCESS) {
             error(symbleList[wp - 1], r);
@@ -631,8 +629,9 @@ void loopDef() {
         asserts(symbleList[wp], PLUS, MINU);
         printWord();
         stepDef();
-        assert(symbleList[wp], RPARENT);
-        printWord();
+        if (symbleList[wp] != RPARENT) {
+            error(symbleList[wp], MISS_RPARENT);
+        } else { printWord(); }
         sentDef();
     } else panic("loopDef");
     printSyntax("<循环语句>");
@@ -658,8 +657,9 @@ void retFuncCallDef() {
     assert(symbleList[wp], LPARENT);
     printWord();
     assignParaDef(tokenList[wp - 2]);
-    assert(symbleList[wp], RPARENT);
-    printWord();
+    if (symbleList[wp] != RPARENT) {
+        error(symbleList[wp], MISS_RPARENT);
+    } else { printWord(); }
     printSyntax("<有返回值函数调用语句>");
 }
 
@@ -675,8 +675,9 @@ void unRetFuncCallDef() {
     assert(symbleList[wp], LPARENT);
     printWord();
     assignParaDef(tokenList[wp - 2]);
-    assert(symbleList[wp], RPARENT);
-    printWord();
+    if (symbleList[wp] != RPARENT) {
+        error(symbleList[wp], MISS_RPARENT);
+    } else { printWord(); }
     printSyntax("<无返回值函数调用语句>");
 }
 
@@ -685,7 +686,7 @@ void unRetFuncCallDef() {
  */
 void assignParaDef(char *fname) {
     int paraIndex = 0;
-    if (symbleList[wp] != RPARENT) {
+    if (symbleList[wp] != RPARENT && symbleList[wp] != SEMICN) {
         while (1) {
             enum Type type = expressDef();
             int r;
@@ -740,8 +741,9 @@ void readSentDef() {
         }
         break;
     }
-    assert(symbleList[wp], RPARENT);
-    printWord();
+    if (symbleList[wp] != RPARENT) {
+        error(symbleList[wp], MISS_RPARENT);
+    } else { printWord(); }
     printSyntax("<读语句>");
 }
 
@@ -756,16 +758,16 @@ void writeSentDef() {
     printWord();
     if (symbleList[wp] == STRCON) {
         stringDef();
-        if (symbleList[wp] == RPARENT) { ;
-        } else if (symbleList[wp] == COMMA) {
+        if (symbleList[wp] == COMMA) {
             printWord();
             expressDef();
-        } else panic("writeSentDef");
+        }
     } else {
         expressDef();
     }
-    assert(symbleList[wp], RPARENT);
-    printWord();
+    if (symbleList[wp] != RPARENT) {
+        error(symbleList[wp], MISS_RPARENT);
+    } else { printWord(); }
     printSyntax("<写语句>");
 }
 
@@ -786,8 +788,9 @@ void retDef() {
                 error(2, MISMATCH_RET);
             }
         }
-        assert(symbleList[wp], RPARENT);
-        printWord();
+        if (symbleList[wp] != RPARENT) {
+            error(symbleList[wp], MISS_RPARENT);
+        } else { printWord(); }
     } else if (checkRet && retType != VOID) {
         error(2, MISMATCH_RET);
     }
