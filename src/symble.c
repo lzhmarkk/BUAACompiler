@@ -18,6 +18,7 @@ int getSymble(char *str, int l) {
         int r = isReserved(token);
         return r == UNDEFINED ? IDENFR : r;
     } else if (isDigit(str[i])) {
+        //这里是将类似与0a这样的识别为标识符
         int r = INTCON;
         if (str[i] == '0' && isDigit(str[i + 1])) {
             error(l, ZERO_AHEAD);

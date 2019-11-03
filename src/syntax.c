@@ -72,7 +72,8 @@ void constExpln() {
  */
 void constDef() {
     int r;
-    if (symbleList[wp] == INTTK) {
+    if (symbleList[wp] == INTTK || symbleList[wp] == CHARTK) {
+        enum Type t = symbleList[wp] == INTTK ? INT : symbleList[wp] == CHARTK ? CHAR : VOID;
         printWord();
         while (1) {
             if (symbleList[wp] == IDENFR) {
@@ -80,39 +81,9 @@ void constDef() {
                 if ((r = checkRedef(tokenList[wp - 1], level)) != SUCCESS) {
                     error(lines[wp - 1], r);
                 } else {
-                    addToTable(tokenList[wp - 1], CONST, INT, level, 0);
+                    addToTable(tokenList[wp - 1], CONST, t, level, 0);
                 }
             } else panic("conDef");
-            assert(symbleList[wp], ASSIGN);
-            printWord();
-
-            if (symbleList[wp] == INTCON || symbleList[wp] == PLUS || symbleList[wp] == MINU) {
-                intDef();
-            } else if (symbleList[wp] == CHARCON) {
-                charDef();
-            }
-            if (symbleList[wp] == COMMA) {
-                printWord();
-                continue;
-            } else if (symbleList[wp] == SEMICN) {
-                break;
-            } else {
-                error(lines[wp - 1], CONST_NOT_INTCHAR);
-                nextLine(wp - 1);
-            }
-            break;
-        }
-    } else if (symbleList[wp] == CHARTK) {
-        printWord();
-        while (1) {
-            if (symbleList[wp] == IDENFR) {
-                idenDef();
-                if ((r = checkRedef(tokenList[wp - 1], level)) != SUCCESS) {
-                    error(lines[wp - 1], r);
-                } else {
-                    addToTable(tokenList[wp - 1], CONST, CHAR, level, 0);
-                }
-            } else panic("constDef");
             assert(symbleList[wp], ASSIGN);
             printWord();
 
@@ -392,7 +363,7 @@ enum Type expressDef() {
  * 项
  */
 enum Type itemDef() {
-    enum Type ret = INT;
+    enum Type ret;
     ret = factorDef();
     while (1) {
         if (symbleList[wp] == MULT || symbleList[wp] == DIV) {
@@ -775,7 +746,6 @@ void readSentDef() {
  * 写语句
  */
 void writeSentDef() {
-    int r;
     assert(symbleList[wp], PRINTFTK);
     printWord();
     assert(symbleList[wp], LPARENT);

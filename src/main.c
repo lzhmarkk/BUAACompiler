@@ -4,11 +4,12 @@
 #include "syntax.h"
 #include "error.h"
 
+#define DEBUG 0
 int j;//token length
 FILE *fpI = NULL, *fpO = NULL, *fpE = NULL;
 
 int main() {
-    if (1) {
+    if (!DEBUG) {
         fpI = fopen("testfile.txt", "r");
         fpO = fopen("output.txt", "w");
         fpE = fopen("error.txt", "w");

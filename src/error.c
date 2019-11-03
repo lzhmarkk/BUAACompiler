@@ -114,8 +114,8 @@ void insertError(struct ErrMsg *new) {
     if (err == NULL) {
         err = new;
     } else {
-        for (e = err; e->next != NULL; e = e->next) { ;
-        }
+        e = err;
+        while (e->next != NULL) { e = e->next; }
         e->next = new;
         /*if (new->line >= e->line) {
             if (e->next == NULL) {

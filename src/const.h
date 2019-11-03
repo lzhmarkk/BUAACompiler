@@ -7,7 +7,5 @@
 #define MAXLENGTH 0x1000
 //每一项转换为char之后的最大长度
 #define TOKENLENGTH 0x3000
-//函数的最大个数
-#define FUNCCOUNT 100
 
 #endif //WORDANALYZER_C_CONST_H

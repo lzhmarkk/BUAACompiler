@@ -94,7 +94,7 @@ int isReserved(char *ch);
 
 void clearToken();
 
-int getSymble(char *str,int l);
+int getSymble(char *str, int l);
 
 void catToken(char c);
 
