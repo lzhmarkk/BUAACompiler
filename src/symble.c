@@ -18,14 +18,19 @@ int getSymble(char *str, int l) {
         int r = isReserved(token);
         return r == UNDEFINED ? IDENFR : r;
     } else if (isDigit(str[i])) {
+        int r = INTCON;
         if (str[i] == '0' && isDigit(str[i + 1])) {
             error(l, ZERO_AHEAD);
         }
-        while (isDigit(str[i])) {
+        while (isDigit(str[i]) || isLetter(str[i])) {
+            if (isLetter(str[i])) {
+                r = IDENFR;
+                error(l, UNRECOGNIZED);
+            }
             catToken(str[i]);
             i++;
         }
-        return INTCON;
+        return r;
     } else if (isLss(str[i])) {
         catToken(str[i]);
         if (isEqu(str[++i])) {

@@ -8,7 +8,7 @@ int j;//token length
 FILE *fpI = NULL, *fpO = NULL, *fpE = NULL;
 
 int main() {
-    if (0) {
+    if (1) {
         fpI = fopen("testfile.txt", "r");
         fpO = fopen("output.txt", "w");
         fpE = fopen("error.txt", "w");
@@ -69,7 +69,7 @@ void printSyntax(char *msg) {
 void printError() {
     struct ErrMsg *e;
     for (e = err; e != NULL; e = e->next) {
-        fprintf(fpE, "%d %c : %s\n", e->line, e->code, e->msg);
+        fprintf(fpE, "%d %c\n", e->line, e->code);
         printf("%d %c : %s\n", e->line, e->code, e->msg);
     }
 }

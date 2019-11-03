@@ -44,9 +44,9 @@ void mainDef();
 
 enum Type expressDef();
 
-enum Type  itemDef();
+enum Type itemDef();
 
-enum Type  factorDef();
+enum Type factorDef();
 
 void sentDef();
 
@@ -83,5 +83,7 @@ void asserts(enum SYMBLE a, enum SYMBLE b1, enum SYMBLE b2);
 void printWord();
 
 void printSyntax(char *msg);
+
+void nextLine(int p);
 
 #endif //WORDANALYZER_C_SYNTAX_Hgi

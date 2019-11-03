@@ -86,34 +86,19 @@ void constDef() {
             assert(symbleList[wp], ASSIGN);
             printWord();
 
-            if ((symbleList[wp] == INTCON &&
-                 (symbleList[wp + 1] == COMMA || symbleList[wp + 1] == SEMICN || symbleList[wp + 1] == IDENFR ||
-                  symbleList[wp + 1] == CONSTTK || symbleList[wp + 1] == INTTK || symbleList[wp + 1] == CHARTK ||
-                  symbleList[wp + 1] == VOIDTK)) ||
-                ((symbleList[wp + 1] == INTCON) && (symbleList[wp] == PLUS || symbleList[wp] == MINU) &&
-                 (symbleList[wp + 2] == COMMA || symbleList[wp + 2] == SEMICN || symbleList[wp + 2] == IDENFR ||
-                  symbleList[wp + 2] == CONSTTK || symbleList[wp + 2] == INTTK || symbleList[wp + 2] == CHARTK ||
-                  symbleList[wp + 2] == VOIDTK))) {
+            if (symbleList[wp] == INTCON || symbleList[wp] == PLUS || symbleList[wp] == MINU) {
                 intDef();
-            } else if (symbleList[wp] == CHARCON &&
-                       (symbleList[wp + 1] == COMMA || symbleList[wp + 1] == SEMICN || symbleList[wp + 1] == IDENFR ||
-                        symbleList[wp + 1] == CONSTTK || symbleList[wp + 1] == INTTK || symbleList[wp + 1] == CHARTK ||
-                        symbleList[wp + 1] == VOIDTK)) {
+            } else if (symbleList[wp] == CHARCON) {
                 charDef();
-            } else {
-                error(lines[wp], CONST_NOT_INTCHAR);
-                while (symbleList[wp] != COMMA && symbleList[wp] != SEMICN) {
-                    //全部跳过
-                    wp++;
-                }
             }
-
             if (symbleList[wp] == COMMA) {
                 printWord();
                 continue;
-            } else if (symbleList[wp] == IDENFR) {
-                error(lines[wp - 1], MISS_SEMI);
-                continue;
+            } else if (symbleList[wp] == SEMICN) {
+                break;
+            } else {
+                error(lines[wp - 1], CONST_NOT_INTCHAR);
+                nextLine(wp - 1);
             }
             break;
         }
@@ -131,34 +116,19 @@ void constDef() {
             assert(symbleList[wp], ASSIGN);
             printWord();
 
-            if ((symbleList[wp] == INTCON &&
-                 (symbleList[wp + 1] == COMMA || symbleList[wp + 1] == SEMICN || symbleList[wp + 1] == IDENFR ||
-                  symbleList[wp + 1] == CONSTTK || symbleList[wp + 1] == INTTK || symbleList[wp + 1] == CHARTK ||
-                  symbleList[wp + 1] == VOIDTK)) ||
-                (symbleList[wp + 1] == INTCON && (symbleList[wp] == PLUS || symbleList[wp] == MINU) &&
-                 (symbleList[wp + 2] == COMMA || symbleList[wp + 2] == SEMICN || symbleList[wp + 2] == IDENFR ||
-                  symbleList[wp + 2] == CONSTTK || symbleList[wp + 2] == INTTK || symbleList[wp + 2] == CHARTK ||
-                  symbleList[wp + 2] == VOIDTK))) {
+            if (symbleList[wp] == INTCON || symbleList[wp] == PLUS || symbleList[wp] == MINU) {
                 intDef();
-            } else if (symbleList[wp] == CHARCON &&
-                       (symbleList[wp + 1] == COMMA || symbleList[wp + 1] == SEMICN || symbleList[wp + 1] == IDENFR ||
-                        symbleList[wp + 1] == CONSTTK || symbleList[wp + 1] == INTTK || symbleList[wp + 1] == CHARTK ||
-                        symbleList[wp + 1] == VOIDTK)) {
+            } else if (symbleList[wp] == CHARCON) {
                 charDef();
-            } else {
-                error(lines[wp], CONST_NOT_INTCHAR);
-                while (symbleList[wp] != COMMA && symbleList[wp] != SEMICN) {
-                    //全部跳过
-                    wp++;
-                }
             }
-
             if (symbleList[wp] == COMMA) {
                 printWord();
                 continue;
-            } else if (symbleList[wp] == IDENFR) {
-                error(lines[wp - 1], MISS_SEMI);
-                continue;
+            } else if (symbleList[wp] == SEMICN) {
+                break;
+            } else {
+                error(lines[wp - 1], CONST_NOT_INTCHAR);
+                nextLine(wp - 1);
             }
             break;
         }
@@ -261,9 +231,11 @@ void varyDef() {
         if (symbleList[wp] == COMMA) {
             printWord();
             continue;
-        } else if (symbleList[wp] == IDENFR) {
-            error(lines[wp - 1], MISS_SEMI);
-            continue;
+        } else if (symbleList[wp] == SEMICN) {
+            break;
+        } else {
+            //error(lines[wp - 1], MISS_SEMI);
+            nextLine(wp - 1);
         }
         break;
     }
@@ -637,7 +609,8 @@ void loopDef() {
             error(lines[wp], MISS_WHILE);
         } else {
             printWord();
-
+        }
+        if (symbleList[wp] == LPARENT) {
             assert(symbleList[wp], LPARENT);
             printWord();
             conditDef();
@@ -867,4 +840,18 @@ void asserts(enum SYMBLE a, enum SYMBLE b1, enum SYMBLE b2) {
     } else {
         panic("assert failed");
     }
+}
+
+void nextLine(int p) {
+    int curLine = lines[p];
+    for (; lines[p] == curLine; p++) {
+        if (symbleList[p] == CONSTTK || symbleList[p] == INTTK || symbleList[p] == CHARTK || symbleList[p] == VOIDTK ||
+            symbleList[p] == IFTK || symbleList[p] == DOTK || symbleList[p] == WHILETK || symbleList[p] == FORTK ||
+            symbleList[p] == SCANFTK ||
+            symbleList[p] == PRINTFTK || symbleList[p] == RETURNTK || symbleList[p] == LBRACE ||
+            symbleList[p] == SEMICN) {
+            break;
+        }
+    }
+    wp = p;
 }
