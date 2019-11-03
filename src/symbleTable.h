@@ -62,7 +62,7 @@ int checkPara2(char *fname, int paraIndex);
 
 enum Type getType(char *name, int leve);
 
-int isConst(char *name,int leve);
+int isConst(char *name, int leve);
 
 int __str2int(char *str);
 

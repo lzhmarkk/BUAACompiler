@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include "const.h"
 
-enum SYMBLE symbleList[WORDSIZE];//todo 加上行数
+enum SYMBLE symbleList[WORDSIZE];
+int lines[WORDSIZE];
 char tokenList[TOKENLENGTH][WORDSIZE];
 int wp;
 

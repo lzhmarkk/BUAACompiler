@@ -35,6 +35,7 @@
 struct ErrMsg {
     int line;
     char code;
+    char *msg;
     struct ErrMsg *next;
 };
 

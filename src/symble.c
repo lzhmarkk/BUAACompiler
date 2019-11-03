@@ -2,7 +2,7 @@
 #include "string.h"
 #include "error.h"
 
-int getSymble(char *str) {
+int getSymble(char *str, int l) {
     clearToken();
     while (isSpace(str[i])) {
         i++;
@@ -52,8 +52,7 @@ int getSymble(char *str) {
         if (isEqu(str[++i])) {
             catToken(str[i]);
             i++;
-        }
-        error(symbleList[i], MISS_EQL);
+        } else { error(l, MISS_EQL); }
         return NEQ;
     } else if (isDoubQuo(str[i])) {
         i++;
@@ -62,7 +61,7 @@ int getSymble(char *str) {
             i++;
             if (i >= strlen(str)) {
                 //如果没有右双引号，则直接全部认为字符串
-                error(symbleList[i], MISS_DOUBQUO);
+                error(l, MISS_DOUBQUO);
                 break;
             }
         }
@@ -76,14 +75,14 @@ int getSymble(char *str) {
             isDigit(str[i])) {
             catToken(str[i]);
         } else {
-            error(symbleList[i], UNRECOGNIZED);
+            error(l, UNRECOGNIZED);
             catToken(str[i]);
         }
         i++;
         if (isSiglQuo(str[i])) {
             i++;
         } else {
-            error(symbleList[i], MISS_SIGLGQUO);
+            error(l, MISS_SIGLGQUO);
         }
         return CHARCON;
     } else if (isPlus(str[i])) {
@@ -135,6 +134,6 @@ int getSymble(char *str) {
         i++;
         return RBRACE;
     }
-    error(symbleList[i], UNRECOGNIZED);
+    error(l, UNRECOGNIZED);
     return UNDEFINED;
 }
