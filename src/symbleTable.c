@@ -146,6 +146,9 @@ int checkPara2(char *fname, int paraIndex) {
     return NOTDEFINED;
 }
 
+/**
+ * 取得类型
+ */
 enum Type getType(char *name, int leve) {
     struct Table *p;
     for (p = table; p != NULL; p = p->next) {
@@ -172,4 +175,22 @@ enum Type getType(char *name, int leve) {
         }
     }
     return VOID;
+}
+
+/**
+ * 查找是否是常量
+ */
+int isConst(char *name, int leve) {
+    struct Table *p;
+    for (p = table; p != NULL; p = p->next) {
+        if (!strcmp(p->name, name) && p->level == leve) {
+            return p->kind == CONST;
+        }
+    }
+    for (p = table; p != NULL; p = p->next) {
+        if (!strcmp(p->name, name) && p->level == 0) {
+            return p->kind == CONST;
+        }
+    }
+    return 0;
 }
