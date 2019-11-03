@@ -11,47 +11,68 @@ void error(int line, int code) {
             new->code = 'z';
             break;
         case REDEFINED_GLO :
-            new->code = 'a';break;
+            new->code = 'a';
+            break;
         case REDEFINED_LOC :
-            new->code = 'b';break;
+            new->code = 'b';
+            break;
         case NOTDEFINED :
-            new->code = 'c';break;
+            new->code = 'c';
+            break;
         case PARASIZE_MISMATCH :
-            new->code = 'd';break;
+            new->code = 'd';
+            break;
         case PARATYPE_MISMATCH :
-            new->code = 'e';break;
+            new->code = 'e';
+            break;
         case CONDIT_ILLEGAL :
-            new->code = 'f';break;
+            new->code = 'f';
+            break;
         case FORBID_RET :
-            new->code = 'g';break;
+            new->code = 'g';
+            break;
         case MISS_RET :
-            new->code = 'h';break;
+            new->code = 'h';
+            break;
         case MISMATCH_RET :
-            new->code = 'i';break;
+            new->code = 'i';
+            break;
         case OFFSET_NOT_INT :
-            new->code = 'j';break;
+            new->code = 'j';
+            break;
         case CANT_CHANGE_CONST :
-            new->code = 'k';break;
+            new->code = 'k';
+            break;
         case MISS_SEMI :
-            new->code = 'l';break;
+            new->code = 'l';
+            break;
         case MISS_RPARENT :
-            new->code = 'm';break;
+            new->code = 'm';
+            break;
         case MISS_RBRACK :
-            new->code = 'n';break;
+            new->code = 'n';
+            break;
         case MISS_WHILE :
-            new->code = 'o';break;
-        case NOT_INT_OR_CHAR :
-            new->code = 'p';break;
+            new->code = 'o';
+            break;
+        case CONST_NOT_INTCHAR :
+            new->code = 'p';
+            break;
         case CALL_UNRET_FUNC :
-            new->code = 'q';break;
+            new->code = 'q';
+            break;
         case NOT_A_FACTOR :
-            new->code = 'r';break;
+            new->code = 'r';
+            break;
         case MISS_SIGLGQUO :
-            new->code = 's';break;
+            new->code = 's';
+            break;
         case MISS_DOUBQUO :
-            new->code = 't';break;
+            new->code = 't';
+            break;
         case MISS_EQL :
-            new->code = 'u';break;
+            new->code = 'u';
+            break;
         default:
             break;
     }

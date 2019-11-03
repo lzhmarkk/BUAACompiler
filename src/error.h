@@ -25,7 +25,7 @@
 #define MISS_RPARENT -14
 #define MISS_RBRACK -15
 #define MISS_WHILE -16
-#define NOT_INT_OR_CHAR -17
+#define CONST_NOT_INTCHAR -17
 #define CALL_UNRET_FUNC -18
 #define NOT_A_FACTOR -19
 #define MISS_SIGLGQUO -20
