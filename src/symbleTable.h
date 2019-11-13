@@ -56,9 +56,9 @@ int checkRedef(char *name, int leve);
 
 int checkExist(char *name, int leve);
 
-int checkPara1(char *fname, int index, enum Type type);
+int checkParaType(char *fname, int index, enum Type type);
 
-int checkPara2(char *fname, int paraIndex);
+int checkParaSize(char *fname, int paraIndex);
 
 enum Type getType(char *name, int leve);
 

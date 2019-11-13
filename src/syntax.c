@@ -686,7 +686,7 @@ void assignParaDef(char *fname) {
             enum Type type = expressDef();
             int r;
             paraIndex++;
-            if ((r = checkPara1(fname, paraIndex, type)) != SUCCESS) {
+            if ((r = checkParaType(fname, paraIndex, type)) != SUCCESS) {
                 error(lines[wp - 1], r);
             }
             if (symbleList[wp] == COMMA) {
@@ -697,7 +697,7 @@ void assignParaDef(char *fname) {
         }
     }
     int r;
-    if ((r = checkPara2(fname, paraIndex)) != SUCCESS) {
+    if ((r = checkParaSize(fname, paraIndex)) != SUCCESS) {
         error(lines[wp], r);
     }
     printSyntax("<值参数表>");

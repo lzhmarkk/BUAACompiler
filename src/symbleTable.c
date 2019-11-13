@@ -104,7 +104,7 @@ int checkExist(char *name, int leve) {
 /**
  * 检测参数类型匹配问题
  */
-int checkPara1(char *fname, int index, enum Type type) {
+int checkParaType(char *fname, int index, enum Type type) {
     struct Table *p;
     for (p = table; p != NULL; p = p->next) {
         if (p->kind == FUNC && p->type == VOID && !strcmp(p->name, fname)) {
@@ -129,7 +129,7 @@ int checkPara1(char *fname, int index, enum Type type) {
 /**
  * 检测参数数量类型问题
  */
-int checkPara2(char *fname, int paraIndex) {
+int checkParaSize(char *fname, int paraIndex) {
     struct Table *f, *p;
     for (f = table; f != NULL; f = f->next) {
         if (f->kind == FUNC && f->type == VOID && !strcmp(f->name, fname)) {
