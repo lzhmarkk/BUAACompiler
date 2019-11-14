@@ -338,13 +338,13 @@ void mainDef() {
 /**
  * 表达式
  */
-enum Type expressDef() {
+int *expressDef() {
     enum Type ret = INT;
     if (symbleList[wp] == PLUS || symbleList[wp] == MINU) {
         printWord();
         itemDef();
     } else {
-        ret = itemDef();
+        ret = itemDef()[0];
     }
     while (1) {
         if (symbleList[wp] == PLUS || symbleList[wp] == MINU) {
@@ -356,15 +356,16 @@ enum Type expressDef() {
         }
     }
     printSyntax("<表达式>");
-    return ret;
+    retArr[0] = ret;
+    return retArr;
 }
 
 /**
  * 项
  */
-enum Type itemDef() {
+int *itemDef() {
     enum Type ret;
-    ret = factorDef();
+    ret = factorDef()[0];
     while (1) {
         if (symbleList[wp] == MULT || symbleList[wp] == DIV) {
             printWord();
@@ -375,13 +376,14 @@ enum Type itemDef() {
         }
     }
     printSyntax("<项>");
-    return ret;
+    retArr[0] = ret;
+    return retArr;
 }
 
 /**
  * 因子
  */
-enum Type factorDef() {
+int *factorDef() {
     int r;
     enum Type ret = INT;
     if (symbleList[wp] == IDENFR && symbleList[wp + 1] != LPARENT) {
@@ -392,7 +394,7 @@ enum Type factorDef() {
         }
         if (symbleList[wp] == LBRACK) {
             printWord();
-            if (expressDef() != INT) {
+            if (expressDef()[0] != INT) {
                 error(lines[wp - 1], OFFSET_NOT_INT);
             }
             if (symbleList[wp] != RBRACK) {
@@ -433,7 +435,8 @@ enum Type factorDef() {
         error(lines[wp], NOT_A_FACTOR);
     }
     printSyntax("<因子>");
-    return ret;
+    retArr[0] = ret;
+    return retArr;
 }
 
 /**
@@ -508,7 +511,7 @@ void assignSentDef() {
         expressDef();
     } else if (symbleList[wp] == LBRACK) {
         printWord();
-        if (expressDef() != INT) {
+        if (expressDef()[0] != INT) {
             error(lines[wp - 1], OFFSET_NOT_INT);
         }
         if (symbleList[wp] != RBRACK) {
@@ -545,13 +548,13 @@ void conditSentDef() {
  * 条件
  */
 void conditDef() {
-    if (expressDef() != INT) {
+    if (expressDef()[0] != INT) {
         error(lines[wp - 1], CONDIT_ILLEGAL);
     }
     if (symbleList[wp] == LSS || symbleList[wp] == LEQ || symbleList[wp] == GRE || symbleList[wp] == GEQ ||
         symbleList[wp] == EQL || symbleList[wp] == NEQ) {
         printWord();
-        if (expressDef() != INT) {
+        if (expressDef()[0] != INT) {
             error(lines[wp - 1], CONDIT_ILLEGAL);
         }
     }
@@ -683,7 +686,7 @@ void assignParaDef(char *fname) {
     int paraIndex = 0;
     if (symbleList[wp] != RPARENT && symbleList[wp] != SEMICN) {
         while (1) {
-            enum Type type = expressDef();
+            enum Type type = expressDef()[0];
             int r;
             paraIndex++;
             if ((r = checkParaType(fname, paraIndex, type)) != SUCCESS) {
@@ -774,7 +777,7 @@ void retDef() {
     hasRet = 1;
     if (symbleList[wp] == LPARENT) {
         printWord();
-        enum Type ret = expressDef();
+        enum Type ret = expressDef()[0];
         if (checkRet) {
             if (retType == VOID) {
                 error(lines[wp], FORBID_RET);

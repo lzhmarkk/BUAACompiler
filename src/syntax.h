@@ -9,6 +9,7 @@ enum SYMBLE symbleList[WORDSIZE];
 int lines[WORDSIZE];
 char tokenList[TOKENLENGTH][WORDSIZE];
 int wp;
+int retArr[2];
 
 void programDef();
 
@@ -42,11 +43,11 @@ void paraDef();
 
 void mainDef();
 
-enum Type expressDef();
+int* expressDef();
 
-enum Type itemDef();
+int* itemDef();
 
-enum Type factorDef();
+int* factorDef();
 
 void sentDef();
 

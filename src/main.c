@@ -4,7 +4,7 @@
 #include "syntax.h"
 #include "error.h"
 
-#define DEBUG 0
+#define DEBUG 1
 int j;//token length
 FILE *fpI = NULL, *fpO = NULL, *fpE = NULL;
 
