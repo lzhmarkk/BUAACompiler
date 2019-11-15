@@ -2,7 +2,6 @@
 #define WORDANALYZER_C_SYMBLETABLE_H
 
 #include "word.h"
-#include "const.h"
 #include "syntax.h"
 
 int level;
@@ -42,6 +41,7 @@ struct Table {
     enum Kind kind;
     enum Type type;
     int level;
+    int reg;
     void *info;//指向额外信息的指针
     struct Table *next;
 };

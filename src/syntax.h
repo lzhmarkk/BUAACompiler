@@ -3,7 +3,6 @@
 
 #include "word.h"
 #include <stdio.h>
-#include "const.h"
 
 enum SYMBLE symbleList[WORDSIZE];
 int lines[WORDSIZE];
@@ -13,7 +12,7 @@ int retArr[2];
 
 void programDef();
 
-void charDef();
+int charDef();
 
 void stringDef();
 
@@ -21,11 +20,11 @@ void constExpln();
 
 void constDef();
 
-void intDef();
+int intDef();
 
-void unsgIntDef();
+int unsgIntDef();
 
-void idenDef();
+int idenDef();
 
 void explnheadDef();
 
@@ -59,9 +58,9 @@ void conditDef();
 
 void loopDef();
 
-void stepDef();
+int stepDef();
 
-void retFuncCallDef();
+int retFuncCallDef();
 
 void unRetFuncCallDef();
 

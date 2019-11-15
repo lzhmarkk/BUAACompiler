@@ -3,12 +3,14 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "error.h"
+#include "generate.h"
 
 void addToTable(char *name, enum Kind kind, enum Type type, int leve, int size, ...) {
     struct Table *new = (struct Table *) malloc(sizeof(struct Table));
     strcpy(new->name, name);
     new->kind = kind;
     new->type = type;
+    new->reg = newRegister();//新分配一个reg个每个符号
     new->level = leve;
     new->next = NULL;
 

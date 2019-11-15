@@ -5,7 +5,6 @@
 #ifndef WORDANALYZER_C_ERROR_H
 #define WORDANALYZER_C_ERROR_H
 
-#include "const.h"
 #include "symbleTable.h"
 
 #define SUCCESS        0

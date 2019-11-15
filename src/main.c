@@ -3,6 +3,7 @@
 #include <string.h>
 #include "syntax.h"
 #include "error.h"
+#include "generate.h"
 
 #define DEBUG 1
 int j;//token length
@@ -40,6 +41,7 @@ int main() {
     wp = 0;
     programDef();
     printError();
+    printCode();
     fclose(fpI);
     fclose(fpO);
     fclose(fpE);
