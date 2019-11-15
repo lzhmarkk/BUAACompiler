@@ -284,6 +284,7 @@ void unRetFuncDef() {
     assert(symbleList[wp], RBRACE);
     printWord();
     checkRet = 0;
+    emit(Ret, 1, 0);
     printSyntax("<无返回值函数定义>");
 }
 
@@ -564,6 +565,7 @@ void assignSentDef() {
     } else if (symbleList[wp] == LBRACK) {
         printWord();
         int *re = expressDef();
+        int offset = re[1];
         if (re[0] != INT) {
             error(lines[wp - 1], OFFSET_NOT_INT);
         }
@@ -573,7 +575,7 @@ void assignSentDef() {
         assert(symbleList[wp], ASSIGN);
         printWord();
         fromReg = expressDef()[1];
-        emit(ArrS, 3, name, re[1], fromReg);
+        emit(ArrS, 3, name, offset, fromReg);
     } else panic("assignSentDef");
     printSyntax("<赋值语句>");
 }
@@ -650,6 +652,8 @@ void conditDef() {
             default:
                 break;
         }
+    } else {
+        branchP = emit(Bra, 3, regA, BEQ, NULL);
     }
     printSyntax("<条件>");
 }

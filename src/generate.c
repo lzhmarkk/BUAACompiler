@@ -236,7 +236,28 @@ void printCode() {
                 break;
             case Bra: {
                 struct Bra *b = p->info;
-                printf("branch(%d) t%d %s\n", b->type, b->reg, ((struct Label *) b->label)->name);
+                char *Op;
+                switch (b->type) {
+                    case BEQ:
+                        Op = "==";
+                        break;
+                    case BNE:
+                        Op = "!=";
+                        break;
+                    case BGE:
+                        Op = ">=";
+                        break;
+                    case BGT:
+                        Op = ">";
+                        break;
+                    case BLE:
+                        Op = "<=";
+                        break;
+                    case BLT:
+                        Op = "<";
+                        break;
+                }
+                printf("branch(%s) t%d %s\n", Op, b->reg, ((struct Label *) b->label)->name);
                 break;
             }
             case Label:
@@ -244,12 +265,12 @@ void printCode() {
                 break;
             case ArrL: {
                 struct ArrL *a = p->info;
-                printf("t%d = %s[%d]\n", a->to, a->name, a->offset);
+                printf("t%d = %s[t%d]\n", a->to, a->name, a->offset);
                 break;
             }
             case ArrS: {
                 struct ArrS *a = p->info;
-                printf("%s[%d] = t%d", a->name, a->offset, a->from);
+                printf("%s[t%d] = t%d\n", a->name, a->offset, a->from);
                 break;
                 case Read:
                     printf("Read t%d\n", ((struct Read *) p->info)->reg);
