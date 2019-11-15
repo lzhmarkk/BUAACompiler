@@ -2,7 +2,7 @@
 #include "word.h"
 #include "symbleTable.h"
 #include "error.h"
-#include "generate.h"
+#include "mid.h"
 
 /**
  * 程序

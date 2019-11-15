@@ -2,8 +2,8 @@
 // Created by lzhmark on 2019/11/14.
 //
 
-#ifndef WORDANALYZER_C_GENERATE_H
-#define WORDANALYZER_C_GENERATE_H
+#ifndef WORDANALYZER_C_MID_H
+#define WORDANALYZER_C_MID_H
 
 #include "symbleTable.h"
 
@@ -137,4 +137,4 @@ enum BranchType reverse(enum BranchType type);
 
 void printCode();
 
-#endif //WORDANALYZER_C_GENERATE_H
+#endif //WORDANALYZER_C_MID_H

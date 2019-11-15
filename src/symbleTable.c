@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "error.h"
-#include "generate.h"
+#include "mid.h"
 
 void addToTable(char *name, enum Kind kind, enum Type type, int leve, int size, ...) {
     struct Table *new = (struct Table *) malloc(sizeof(struct Table));

@@ -3,7 +3,7 @@
 #include <string.h>
 #include "syntax.h"
 #include "error.h"
-#include "generate.h"
+#include "mid.h"
 
 #define DEBUG 1
 int j;//token length
