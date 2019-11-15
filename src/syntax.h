@@ -42,11 +42,11 @@ void paraDef();
 
 void mainDef();
 
-int* expressDef();
+int *expressDef();
 
-int* itemDef();
+int *itemDef();
 
-int* factorDef();
+int *factorDef();
 
 void sentDef();
 
@@ -80,9 +80,9 @@ void assert(enum SYMBLE a, enum SYMBLE b);
 
 void asserts(enum SYMBLE a, enum SYMBLE b1, enum SYMBLE b2);
 
-void printWord();
-
 void printSyntax(char *msg);
+
+void printMips(char *msg);
 
 void nextLine(int p);
 

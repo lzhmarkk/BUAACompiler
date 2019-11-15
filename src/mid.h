@@ -1,17 +1,15 @@
-//
-// Created by lzhmark on 2019/11/14.
-//
-
 #ifndef WORDANALYZER_C_MID_H
 #define WORDANALYZER_C_MID_H
 
 #include "symbleTable.h"
 
 int Register;
+int saveReg;
 struct Code *code;
 
 int loopCount;
 char labelBase[100][9];
+char mainLabel[5];
 
 struct Code *labelP1;
 struct Code *labelP2;
@@ -27,6 +25,7 @@ enum Op {
 enum CodeType {
     Push,
     Call,
+    Para,
     Ret,
     ReadRet,
     Var,
@@ -55,6 +54,9 @@ struct Push {
 };
 struct Call {
     struct Label *label;
+};
+struct Para {
+    int reg;
 };
 struct ReadRet {
     int reg;
@@ -126,6 +128,10 @@ struct Code {
 struct Code *emit(enum CodeType t, int size, ...);
 
 int newRegister();
+
+void saveRegister();
+
+void revertRegister();
 
 int getReg(char *name, int leve);
 

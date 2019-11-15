@@ -100,4 +100,6 @@ void catToken(char c);
 
 char *getReserved(int s);
 
+void printWord();
+
 #endif

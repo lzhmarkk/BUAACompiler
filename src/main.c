@@ -7,7 +7,7 @@
 
 #define DEBUG 1
 int j;//token length
-FILE *fpI = NULL, *fpO = NULL, *fpE = NULL;
+FILE *fpI = NULL, *fpO = NULL, *fpE = NULL, *fpM = NULL;
 
 int main() {
     if (!DEBUG) {
@@ -18,6 +18,7 @@ int main() {
         fpI = fopen("../test/testfile.txt", "r");
         fpO = fopen("../test/output.txt", "w");
         fpE = fopen("../test/error.txt", "w");
+        fpM = fopen("../test/mips.txt", "w");
     }
     int l = 0;
     while (fgets(buf, MAXLENGTH, fpI)) {
@@ -40,11 +41,13 @@ int main() {
     }
     wp = 0;
     programDef();
+    printTable();
     printError();
     printCode();
     fclose(fpI);
     fclose(fpO);
     fclose(fpE);
+    fclose(fpM);
     return 0;
 }
 
@@ -75,4 +78,8 @@ void printError() {
         fprintf(fpE, "%d %c\n", e->line, e->code);
         printf("%d %c : %s\n", e->line, e->code, e->msg);
     }
+}
+
+void printMips(char *msg) {
+    fprintf(fpM, "%s\n", msg);
 }

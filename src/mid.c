@@ -19,6 +19,10 @@ struct Code *emit(enum CodeType t, int size, ...) {
         struct Call *p = (struct Call *) malloc(sizeof(struct Call));
         p->label = va_arg(vl, struct Label*);
         new->info = p;
+    } else if (t == Para && size == 1) {
+        struct Para *p = (struct Para *) malloc(sizeof(struct Para));
+        p->reg = va_arg(vl, int);
+        new->info = p;
     } else if (t == ReadRet && size == 1) {
         struct ReadRet *p = (struct ReadRet *) malloc(sizeof(struct ReadRet));
         p->reg = va_arg(vl, int);
@@ -110,6 +114,14 @@ int newRegister() {
     return ++Register;
 }
 
+void saveRegister() {
+    saveReg = Register;
+}
+
+void revertRegister() {
+    Register = saveReg;
+}
+
 /**
  * 查找符号表，找到变量分配的的寄存器
  */
@@ -185,6 +197,9 @@ void printCode() {
             case Call:
                 printf("Call %s\n", ((struct Call *) p->info)->label->name);
                 break;
+            case Para:
+                printf("Para t%d\n", ((struct Para *) p->info)->reg);
+                break;
             case Ret:
                 printf("Return t%d\n", ((struct Ret *) p->info)->reg);
                 break;
@@ -236,7 +251,7 @@ void printCode() {
                 break;
             case Bra: {
                 struct Bra *b = p->info;
-                char *Op;
+                char *Op = NULL;
                 switch (b->type) {
                     case BEQ:
                         Op = "==";

@@ -64,6 +64,8 @@ enum Type getType(char *name, int leve);
 
 int isConst(char *name, int leve);
 
+void printTable();
+
 int __str2int(char *str);
 
 struct Table *table;

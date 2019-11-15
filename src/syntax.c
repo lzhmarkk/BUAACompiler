@@ -30,6 +30,7 @@ void programDef() {
         } else {
             break;
         }
+        revertRegister();
     }
     level++;
     mainDef();
@@ -318,6 +319,7 @@ void paraDef() {
                 error(lines[wp - 1], r);
             } else {
                 addToTable(tokenList[wp - 1], PARA, t, level, 0);
+                emit(Para, 1, getReg(tokenList[wp - 1], level));
             }
             if (symbleList[wp] == COMMA) {
                 printWord();
@@ -333,6 +335,12 @@ void paraDef() {
  * 主函数
  */
 void mainDef() {
+    mainLabel[0] = 'M';
+    mainLabel[1] = 'a';
+    mainLabel[2] = 'i';
+    mainLabel[3] = 'n';
+    emit(Label, 1, mainLabel);
+
     retType = VOID;
     checkRet = 1;
     hasRet = 0;

@@ -29,6 +29,7 @@ void addToTable(char *name, enum Kind kind, enum Type type, int leve, int size, 
         newFT->paraSize = va_arg(vl, int);
         newFT->ret = va_arg(vl, int);
         new->info = newFT;
+        saveRegister();
     } else {
         new->info = NULL;
     }
@@ -195,4 +196,41 @@ int isConst(char *name, int leve) {
         }
     }
     return 0;
+}
+
+void printTable() {
+    printf("      Name  Kind  Type  Lev Reg\n");
+    struct Table *p;
+    for (p = table; p != NULL; p = p->next) {
+        char *kind = NULL, *type = NULL;
+        switch (p->kind) {
+            case CONST:
+                kind = "CONST";
+                break;
+            case VAR:
+                kind = "VAR";
+                break;
+            case FUNC:
+                kind = "FUNC";
+                break;
+            case PARA:
+                kind = "PARA";
+                break;
+        }
+        switch (p->type) {
+            case CHAR:
+                type = "CHAR";
+                break;
+            case INT:
+                type = "INT";
+                break;
+            case ARRAY:
+                type = "ARRAY";
+                break;
+            case VOID:
+                type = "VOID";
+                break;
+        }
+        printf("%10s %5s %5s %2d %3d\n", p->name, kind, type, p->level, p->reg);
+    }
 }
