@@ -67,11 +67,13 @@ struct Ret {
 struct Var {
     enum Type type;
     char *name;
+    int reg;
     int size;
 };
 struct Const {
     enum Type type;
     char *name;
+    int reg;
     int value;
 };
 struct Tuple {
@@ -101,11 +103,13 @@ struct Label {
 };
 struct ArrL {
     char *name;
+    int reg;
     int offset;
     int to;
 };
 struct ArrS {
     char *name;
+    int reg;
     int offset;
     int from;
 };

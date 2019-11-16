@@ -31,16 +31,18 @@ struct Code *emit(enum CodeType t, int size, ...) {
         struct Ret *p = (struct Ret *) malloc(sizeof(struct Ret));
         p->reg = va_arg(vl, int);
         new->info = p;
-    } else if (t == Var && size == 3) {
+    } else if (t == Var && size == 4) {
         struct Var *p = (struct Var *) malloc(sizeof(struct Var));
         p->type = va_arg(vl, enum Type);
         p->name = va_arg(vl, char*);
+        p->reg = va_arg(vl, int);
         p->size = va_arg(vl, int);
         new->info = p;
-    } else if (t == Const && size == 3) {
+    } else if (t == Const && size == 4) {
         struct Const *p = (struct Const *) malloc(sizeof(struct Const));
         p->type = va_arg(vl, enum Type);
         p->name = va_arg(vl, char*);
+        p->reg = va_arg(vl, int);
         p->value = va_arg(vl, int);
         new->info = p;
     } else if (t == Tuple && size == 4) {
@@ -74,15 +76,17 @@ struct Code *emit(enum CodeType t, int size, ...) {
         struct Label *p = (struct Label *) malloc(sizeof(struct Label));
         p->name = va_arg(vl, char*);
         new->info = p;
-    } else if (t == ArrL && size == 3) {
+    } else if (t == ArrL && size == 4) {
         struct ArrL *p = (struct ArrL *) malloc(sizeof(struct ArrL));
         p->name = va_arg(vl, char*);
+        p->reg = va_arg(vl, int);
         p->offset = va_arg(vl, int);
         p->to = va_arg(vl, int);
         new->info = p;
-    } else if (t == ArrS && size == 3) {
+    } else if (t == ArrS && size == 4) {
         struct ArrS *p = (struct ArrS *) malloc(sizeof(struct ArrS));
         p->name = va_arg(vl, char*);
+        p->reg = va_arg(vl, int);
         p->offset = va_arg(vl, int);
         p->from = va_arg(vl, int);
         new->info = p;
@@ -119,7 +123,7 @@ void saveRegister() {
 }
 
 void revertRegister() {
-    Register = saveReg;
+    //Register = saveReg;
 }
 
 /**
@@ -208,12 +212,12 @@ void printCode() {
                 break;
             case Var: {
                 struct Var *v = p->info;
-                printf("%s %s %d\n", v->type == INT ? "INT" : "CHAR", v->name, v->size);
+                printf("Var %s t%d %d\n", v->name, v->reg, v->size);
                 break;
             }
             case Const: {
                 struct Const *c = p->info;
-                printf("Const %s %s = %d\n", c->type == INT ? "INT" : "CHAR", c->name, c->value);
+                printf("Const %s t%d = %d\n", c->name, c->reg, c->value);
                 break;
             }
             case Tuple: {
@@ -280,12 +284,12 @@ void printCode() {
                 break;
             case ArrL: {
                 struct ArrL *a = p->info;
-                printf("t%d = %s[t%d]\n", a->to, a->name, a->offset);
+                printf("t%d = t%d[t%d]\n", a->to, a->reg, a->offset);
                 break;
             }
             case ArrS: {
                 struct ArrS *a = p->info;
-                printf("%s[t%d] = t%d\n", a->name, a->offset, a->from);
+                printf("t%d[t%d] = t%d\n", a->reg, a->offset, a->from);
                 break;
                 case Read:
                     printf("Read t%d\n", ((struct Read *) p->info)->reg);

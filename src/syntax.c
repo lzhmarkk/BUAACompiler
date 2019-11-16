@@ -75,12 +75,11 @@ void constExpln() {
 void constDef() {
     int r;
     if (symbleList[wp] == INTTK || symbleList[wp] == CHARTK) {
-        int reg;
         enum Type t = symbleList[wp] == INTTK ? INT : symbleList[wp] == CHARTK ? CHAR : VOID;
         printWord();
         while (1) {
             assert(symbleList[wp], IDENFR);
-            reg = idenDef();
+            idenDef();
             char *name = tokenList[wp - 1];
             if ((r = checkRedef(name, level)) != SUCCESS) {
                 error(lines[wp - 1], r);
@@ -99,7 +98,7 @@ void constDef() {
                 value = charDef();
                 type = CHAR;
             }
-            emit(Const, 3, type, name, value);
+            emit(Const, 4, type, name, getReg(name, level), value);
             if (symbleList[wp] == COMMA) {
                 printWord();
                 continue;
@@ -190,13 +189,12 @@ void varyExpln() {
  */
 void varyDef() {
     int r;
-    int reg;
     asserts(symbleList[wp], INTTK, CHARTK);
     enum Type t = symbleList[wp] == INTTK ? INT : symbleList[wp] == CHARTK ? CHAR : VOID;
     printWord();
     while (1) {
         int size = 0;
-        reg = idenDef();
+        idenDef();
         char *name = tokenList[wp - 1];
         if (symbleList[wp] == LBRACK) {
             printWord();
@@ -216,7 +214,7 @@ void varyDef() {
                 addToTable(name, VAR, t, level, 0);
             }
         }
-        emit(Var, 3, t, name, size);
+        emit(Var, 4, t, name, getReg(name, level), size);
         if (symbleList[wp] == COMMA) {
             printWord();
             continue;
@@ -448,8 +446,9 @@ int *factorDef() {
             if (re[0] != INT) {
                 error(lines[wp - 1], OFFSET_NOT_INT);
             }
+            int fromReg = reg;
             reg = newRegister();
-            emit(ArrL, 3, name, re[1], reg);
+            emit(ArrL, 4, name, fromReg, re[1], reg);
             if (symbleList[wp] != RBRACK) {
                 error(lines[wp], MISS_RBRACK);
             } else { printWord(); }
@@ -583,7 +582,7 @@ void assignSentDef() {
         assert(symbleList[wp], ASSIGN);
         printWord();
         fromReg = expressDef()[1];
-        emit(ArrS, 3, name, offset, fromReg);
+        emit(ArrS, 4, name, toReg, offset, fromReg);
     } else panic("assignSentDef");
     printSyntax("<赋值语句>");
 }
