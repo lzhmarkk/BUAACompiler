@@ -1,40 +1,64 @@
 #ifndef WORDANALYZER_C_GENERATE_H
 #define WORDANALYZER_C_GENERATE_H
 
-void gen();
+#include "mid.h"
 
-void genPush();
+int paraCount;//参数计数器
+char strLabel[LABELSIZE][LABELLENGTH];//string的label，用于开辟空间
+char strList[LABELSIZE][TOKENLENGTH];//string的值，用于开辟空间
+int strCount;//string的计数器
+char arrLabList[LABELSIZE][LABELLENGTH];//array的label，用于开辟空间
+int arrSizeList[LABELSIZE];//array的大小，用于开辟空间
+char arrayLabel[LABELLENGTH];//临时
+int arrayCount;//array的计数器
+int hasEntry;//遇到Func即置1
 
-void genCall();
+void genMips();
 
-void genReadRet();
+void genFunc(struct Func *p);
 
-void genRet();
+void genPush(struct Push *p);
 
-void genVar();
+void genCall(struct Call *p);
 
-void genConst();
+void genPara(struct Para *p);
 
-void genTuple();
+void genReadRet(struct ReadRet *p);
 
-void genAssig();
+void genRet(struct Ret *p);
 
-void genEql();
+void genVar(struct Var *p);
 
-void genGoto();
+void genConst(struct Const *p);
 
-void genBra();
+void genTuple(struct Tuple *p);
 
-void genLabe();
+void genAssig(struct Assig *p);
 
-void genArrL();
+void genEql(struct Eql *p);
 
-void genArrS();
+void genGoto(struct Goto *p);
 
-void genRead();
+void genBra(struct Bra *p);
 
-void genWrite();
+void genLab(struct Label *p);
 
-void printMips(char *msg);
+void genArrL(struct ArrL *p);
+
+void genArrS(struct ArrS *p);
+
+void genRead(struct Read *p);
+
+void genWrite(struct Write *p);
+
+void printMips(const char *msg, ...);
+
+void end();
+
+void initData();
+
+char *getStrLab(char *str);
+
+char *getArrLab(int reg);
 
 #endif //WORDANALYZER_C_GENERATE_H

@@ -8,13 +8,9 @@ int saveReg;
 struct Code *code;
 
 int loopCount;
-char labelBase[100][9];
-char mainLabel[5];
+char labelBase[LABELSIZE][LABELLENGTH];//存储中间代码中所有Label
 
-struct Code *labelP1;
-struct Code *labelP2;
 struct Code *branchP;
-struct Code *ifP;
 
 enum Op {
     PlusOp,
@@ -23,6 +19,7 @@ enum Op {
     DiviOp
 };
 enum CodeType {
+    Func,
     Push,
     Call,
     Para,
@@ -49,11 +46,15 @@ enum BranchType {
     BLE,
     BLT
 };
+struct Func {
+    char *name;
+    int paraSize;
+};
 struct Push {
     int reg;
 };
 struct Call {
-    struct Label *label;
+    struct Func *func;
 };
 struct Para {
     int reg;
@@ -115,11 +116,12 @@ struct ArrS {
 };
 struct Read {
     int reg;
+    enum Type type;
 };
 struct Write {
-    int isReg;
-    char *string;
-    int reg;
+    char *string;//如果为NULL，说明只有寄存器
+    int reg;//如果为-1,说明只有字符串
+    enum Type type;
 };
 
 struct Code {

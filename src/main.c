@@ -4,6 +4,8 @@
 #include "syntax.h"
 #include "error.h"
 #include "mid.h"
+#include "generate.h"
+#include "stdarg.h"
 
 #define DEBUG 1
 int j;//token length
@@ -14,6 +16,7 @@ int main() {
         fpI = fopen("testfile.txt", "r");
         fpO = fopen("output.txt", "w");
         fpE = fopen("error.txt", "w");
+        fpM = fopen("mips.txt", "w");
     } else {
         fpI = fopen("../test/testfile.txt", "r");
         fpO = fopen("../test/output.txt", "w");
@@ -44,6 +47,7 @@ int main() {
     printTable();
     printError();
     printCode();
+    genMips();
     fclose(fpI);
     fclose(fpO);
     fclose(fpE);
@@ -80,6 +84,10 @@ void printError() {
     }
 }
 
-void printMips(char *msg) {
-    fprintf(fpM, "%s\n", msg);
+void printMips(const char *msg, ...) {
+    va_list args;
+    va_start(args, msg);
+    vfprintf(fpM, msg, args);
+    va_end(args);
+    vfprintf(fpM, "\n", args);
 }

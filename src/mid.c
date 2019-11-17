@@ -11,13 +11,18 @@ struct Code *emit(enum CodeType t, int size, ...) {
 
     va_list vl;
     va_start(vl, size);
-    if (t == Push && size == 1) {
+    if (t == Func && size == 1) {
+        struct Func *p = (struct Func *) malloc(sizeof(struct Func));
+        p->name = va_arg(vl, char*);
+        p->paraSize = 0;
+        new->info = p;
+    } else if (t == Push && size == 1) {
         struct Push *p = (struct Push *) malloc(sizeof(struct Push));
         p->reg = va_arg(vl, int);
         new->info = p;
     } else if (t == Call && size == 1) {
         struct Call *p = (struct Call *) malloc(sizeof(struct Call));
-        p->label = va_arg(vl, struct Label*);
+        p->func = va_arg(vl, struct Func*);
         new->info = p;
     } else if (t == Para && size == 1) {
         struct Para *p = (struct Para *) malloc(sizeof(struct Para));
@@ -90,15 +95,16 @@ struct Code *emit(enum CodeType t, int size, ...) {
         p->offset = va_arg(vl, int);
         p->from = va_arg(vl, int);
         new->info = p;
-    } else if (t == Read && size == 1) {
+    } else if (t == Read && size == 2) {
         struct Read *p = (struct Read *) malloc(sizeof(struct Read));
         p->reg = va_arg(vl, int);
+        p->type = va_arg(vl, enum Type);
         new->info = p;
     } else if (t == Write && size == 3) {
         struct Write *p = (struct Write *) malloc(sizeof(struct Write));
-        p->isReg = va_arg(vl, int);
         p->string = va_arg(vl, char*);
         p->reg = va_arg(vl, int);
+        p->type = va_arg(vl, enum Type);
         new->info = p;
     }
 
@@ -127,7 +133,7 @@ void revertRegister() {
 }
 
 /**
- * 查找符号表，找到变量分配的的寄存器
+ * 查找符号表，找到变量分配的虚拟寄存器
  */
 int getReg(char *name, int leve) {
     struct Table *p;
@@ -151,8 +157,8 @@ int getReg(char *name, int leve) {
 struct Code *getLabel(char *name) {
     struct Code *p;
     for (p = code; p != NULL; p = p->next) {
-        if (p->type == Label) {
-            struct Label *l = p->info;
+        if (p->type == Func) {
+            struct Func *l = p->info;
             if (!strcmp(l->name, name)) {
                 return p;
             }
@@ -195,11 +201,14 @@ void printCode() {
     struct Code *p;
     for (p = code; p != NULL; p = p->next) {
         switch (p->type) {
+            case Func:
+                printf("f %s:\n", ((struct Func *) p->info)->name);
+                break;
             case Push:
                 printf("Push t%d\n", ((struct Push *) p->info)->reg);
                 break;
             case Call:
-                printf("Call %s\n", ((struct Call *) p->info)->label->name);
+                printf("Call %s\n", ((struct Call *) p->info)->func->name);
                 break;
             case Para:
                 printf("Para t%d\n", ((struct Para *) p->info)->reg);
@@ -291,15 +300,19 @@ void printCode() {
                 struct ArrS *a = p->info;
                 printf("t%d[t%d] = t%d\n", a->reg, a->offset, a->from);
                 break;
-                case Read:
-                    printf("Read t%d\n", ((struct Read *) p->info)->reg);
-                break;
+                case Read: {
+                    struct Read *r = p->info;
+                    printf("Read%s t%d\n", r->type == INT ? "Int" : "Char", r->reg);
+                    break;
+                }
                 case Write: {
                     struct Write *w = p->info;
-                    if (w->isReg) {
-                        printf("Write t%d\n", w->reg);
+                    if (w->string == NULL) {
+                        printf("Write%s t%d\n", w->type == INT ? "Int" : "Char", w->reg);
+                    } else if (w->reg == -1) {
+                        printf("WriteStr \"%s\"\n", w->string);
                     } else {
-                        printf("Write \"%s\"\n", w->string);
+                        printf("WriteStr \"%s\" %s t%d\n", w->string, w->type == INT ? "Int" : "Char", w->reg);
                     }
                     break;
                 }

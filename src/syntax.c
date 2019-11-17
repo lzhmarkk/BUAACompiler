@@ -161,7 +161,7 @@ void explnheadDef() {
             error(lines[wp - 1], r);
         } else {
             addToTable(tokenList[wp - 1], FUNC, VOID, 0, 2, 666, t);
-            emit(Label, 1, tokenList[wp - 1]);
+            emit(Func, 1, tokenList[wp - 1]);
         }
         retType = t;
     } else {
@@ -266,7 +266,7 @@ void unRetFuncDef() {
         error(lines[wp - 1], r);
     } else {
         addToTable(name, FUNC, VOID, 0, 2, 888, VOID);
-        emit(Label, 1, name);
+        emit(Func, 1, name);
     }
     retType = VOID;
     checkRet = 1;
@@ -333,11 +333,7 @@ void paraDef() {
  * 主函数
  */
 void mainDef() {
-    mainLabel[0] = 'M';
-    mainLabel[1] = 'a';
-    mainLabel[2] = 'i';
-    mainLabel[3] = 'n';
-    emit(Label, 1, mainLabel);
+    emit(Func, 1, "Main");
 
     retType = VOID;
     checkRet = 1;
@@ -591,11 +587,13 @@ void assignSentDef() {
  * 条件语句
  */
 void conditSentDef() {
+    struct Code *thisBranchP, *labelP1, *labelP2, *ifP;
     assert(symbleList[wp], IFTK);
     printWord();
     assert(symbleList[wp], LPARENT);
     printWord();
-    conditDef();//跳转位置尚未填写,存在branchP
+    conditDef();//跳转位置尚未填写,存在branchP中
+    thisBranchP = branchP;
     if (symbleList[wp] != RPARENT) {
         error(lines[wp - 1], MISS_RPARENT);
     } else { printWord(); }
@@ -611,7 +609,7 @@ void conditSentDef() {
     } else {
         labelP1 = emit(Label, 1, genLabel());//if结束END1标签
     }
-    ((struct Bra *) branchP->info)->label = labelP1->info;//回填END1至if中
+    ((struct Bra *) thisBranchP->info)->label = labelP1->info;//回填END1至if中
     printSyntax("<条件语句>");
 }
 
@@ -670,6 +668,7 @@ void conditDef() {
  */
 void loopDef() {
     int r;
+    struct Code *labelP1, *labelP2;
     if (symbleList[wp] == WHILETK) {
         printWord();
         assert(symbleList[wp], LPARENT);
@@ -865,7 +864,7 @@ void readSentDef() {
         if ((r = checkExist(tokenList[wp - 1], level)) != SUCCESS) {
             error(lines[wp - 1], r);
         }
-        emit(Read, 1, reg);
+        emit(Read, 2, reg, getType(tokenList[wp - 1], level));
         if (symbleList[wp] == COMMA) {
             printWord();
             continue;
@@ -882,22 +881,26 @@ void readSentDef() {
  * 写语句
  */
 void writeSentDef() {
-    int reg;
+    int reg = -1;
+    enum Type t = VOID;
     assert(symbleList[wp], PRINTFTK);
     printWord();
     assert(symbleList[wp], LPARENT);
     printWord();
     if (symbleList[wp] == STRCON) {
         stringDef();
-        emit(Write, 3, 0, tokenList[wp - 1], -1);
+        char *str = tokenList[wp - 1];
         if (symbleList[wp] == COMMA) {
             printWord();
-            reg = expressDef()[1];
-            emit(Write, 3, 1, NULL, reg);
+            int *re = expressDef();
+            t = re[0];
+            reg = re[1];
         }
+        emit(Write, 3, str, reg, t);
     } else {
-        reg = expressDef()[1];
-        emit(Write, 3, 1, NULL, reg);
+        int *re = expressDef();
+        reg = re[1];
+        emit(Write, 3, NULL, reg, re[0]);
     }
     if (symbleList[wp] != RPARENT) {
         error(lines[wp - 1], MISS_RPARENT);

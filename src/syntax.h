@@ -82,8 +82,6 @@ void asserts(enum SYMBLE a, enum SYMBLE b1, enum SYMBLE b2);
 
 void printSyntax(char *msg);
 
-void printMips(char *msg);
-
 void nextLine(int p);
 
 #endif //WORDANALYZER_C_SYNTAX_Hgi
