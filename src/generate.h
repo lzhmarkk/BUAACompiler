@@ -9,8 +9,6 @@ char strList[LABELSIZE][TOKENLENGTH];//string的值，用于开辟空间
 int strCount;//string的计数器
 char arrLabList[LABELSIZE][LABELLENGTH];//array的label，用于开辟空间
 int arrSizeList[LABELSIZE];//array的大小，用于开辟空间
-char arrayLabel[LABELLENGTH];//临时
-int arrayCount;//array的计数器
 int hasEntry;//遇到Func即置1
 
 void genMips();
@@ -35,8 +33,6 @@ void genTuple(struct Tuple *p);
 
 void genAssig(struct Assig *p);
 
-void genEql(struct Eql *p);
-
 void genGoto(struct Goto *p);
 
 void genBra(struct Bra *p);
@@ -58,7 +54,5 @@ void end();
 void initData();
 
 char *getStrLab(char *str);
-
-char *getArrLab(int reg);
 
 #endif //WORDANALYZER_C_GENERATE_H

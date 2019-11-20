@@ -214,7 +214,11 @@ void varyDef() {
                 addToTable(name, VAR, t, level, 0);
             }
         }
-        emit(Var, 4, t, name, getReg(name, level), size);
+        if (size == 0) {
+            emit(Var, 4, t, name, getReg(name, level), size);
+        } else {
+            emit(Var, 4, t, getArrLabel(name, level), getReg(name, level), size);
+        }
         if (symbleList[wp] == COMMA) {
             printWord();
             continue;
@@ -283,7 +287,7 @@ void unRetFuncDef() {
     assert(symbleList[wp], RBRACE);
     printWord();
     checkRet = 0;
-    emit(Ret, 1, 0);
+    emit(Ret, 2, 0, facReg);//象征性返回0寄存器
     printSyntax("<无返回值函数定义>");
 }
 
@@ -361,37 +365,48 @@ void mainDef() {
  */
 int *expressDef() {
     enum Type ret = INT;
-    int reg;
+    int valueA;
+    enum factorKind factorRetA;
     if (symbleList[wp] == PLUS || symbleList[wp] == MINU) {
+        //第一项前有+ -
         int minus = symbleList[wp] == MINU;
         printWord();
-        reg = itemDef()[1];
+        int *r = itemDef();
+        valueA = r[1];
+        factorRetA = r[2];
         if (minus) {
             int regC = newRegister();
-            emit(Tuple, 4, MinuOp, 0, reg, regC);
-            reg = regC;
+            emit(Tuple, 6, MinuOp, 0, facInt, valueA, factorRetA, regC);
+            valueA = regC;
+            factorRetA = facReg;
         }
     } else {
+        //第一项前没+ -
         int *r = itemDef();
         ret = r[0];
-        reg = r[1];
+        valueA = r[1];
+        factorRetA = r[2];
     }
     while (1) {
         if (symbleList[wp] == PLUS || symbleList[wp] == MINU) {
             int minus = symbleList[wp] == MINU;
             printWord();
             ret = INT;
-            int regB = itemDef()[1];
+            int *r = itemDef();
+            int valueB = r[1];
+            enum factorKind factorRetB = r[2];
             int regC = newRegister();
-            emit(Tuple, 4, minus ? MinuOp : PlusOp, reg, regB, regC);
-            reg = regC;
+            emit(Tuple, 6, minus ? MinuOp : PlusOp, valueA, factorRetA, valueB, factorRetB, regC);
+            valueA = regC;
+            factorRetA = facReg;
         } else {
             break;
         }
     }
     printSyntax("<表达式>");
     retArr[0] = ret;
-    retArr[1] = reg;
+    retArr[1] = valueA;
+    retArr[2] = factorRetA;
     return retArr;
 }
 
@@ -400,26 +415,30 @@ int *expressDef() {
  */
 int *itemDef() {
     enum Type ret;
-    int reg;
     int *r = factorDef();
     ret = r[0];
-    reg = r[1];
+    int valueA = r[1];
+    enum factorKind factorRetA = r[2];
     while (1) {
         if (symbleList[wp] == MULT || symbleList[wp] == DIV) {
             int divu = symbleList[wp] == DIV;
             printWord();
             ret = INT;
-            int regB = factorDef()[1];
+            int *re = factorDef();
+            int valueB = re[1];
+            enum factorKind factorRetB = re[2];
             int regC = newRegister();
-            emit(Tuple, 4, divu ? DiviOp : MultOp, reg, regB, regC);
-            reg = regC;
+            emit(Tuple, 6, divu ? DiviOp : MultOp, valueA, factorRetA, valueB, factorRetB, regC);
+            valueA = regC;
+            factorRetA = facReg;
         } else {
             break;
         }
     }
     printSyntax("<项>");
     retArr[0] = ret;
-    retArr[1] = reg;
+    retArr[1] = valueA;
+    retArr[2] = factorRetA;
     return retArr;
 }
 
@@ -429,9 +448,10 @@ int *itemDef() {
 int *factorDef() {
     int r;
     enum Type ret = INT;
-    int reg = 0;
+    int value = 0;
+    enum factorKind factorRet = facReg;
     if (symbleList[wp] == IDENFR && symbleList[wp + 1] != LPARENT) {
-        reg = idenDef();
+        value = idenDef();
         char *name = tokenList[wp - 1];
         if ((r = checkExist(name, level)) != SUCCESS) {
             error(lines[wp - 1], r);
@@ -442,29 +462,29 @@ int *factorDef() {
             if (re[0] != INT) {
                 error(lines[wp - 1], OFFSET_NOT_INT);
             }
-            int fromReg = reg;
-            reg = newRegister();
-            emit(ArrL, 4, name, fromReg, re[1], reg);
+            value = newRegister();
+            emit(ArrL, 4, getArrLabel(name, level), re[1], re[2], value);
             if (symbleList[wp] != RBRACK) {
                 error(lines[wp], MISS_RBRACK);
             } else { printWord(); }
         }
         ret = getType(name, level);
+        factorRet = facReg;
     } else if (symbleList[wp] == LPARENT) {
         printWord();
-        reg = expressDef()[1];
+        int *re = expressDef();
+        value = re[1];
+        factorRet = re[2];
         if (symbleList[wp] != RPARENT) {
             error(lines[wp - 1], MISS_RPARENT);
         } else { printWord(); }
     } else if (symbleList[wp] == INTCON || symbleList[wp] == PLUS || symbleList[wp] == MINU) {
-        int value = intDef();
-        reg = newRegister();
-        emit(Eql, 2, value, reg);
+        value = intDef();
+        factorRet = facInt;
     } else if (symbleList[wp] == CHARCON) {
         ret = CHAR;
-        int value = charDef();
-        reg = newRegister();
-        emit(Eql, 2, value, reg);
+        value = charDef();
+        factorRet = facChar;
     } else if (symbleList[wp] == IDENFR && symbleList[wp + 1] == LPARENT) {
         char *name = tokenList[wp];
         if ((r = checkExist(name, 0)) < 0) {
@@ -474,7 +494,7 @@ int *factorDef() {
             wp++;
         } else {
             if (isRetFunc(name)) {
-                reg = retFuncCallDef();
+                value = retFuncCallDef();
                 ret = getType(name, 0);
             } else {
                 error(lines[wp - 1], CALL_UNRET_FUNC);
@@ -483,12 +503,14 @@ int *factorDef() {
                 wp++;
             }
         }
+        factorRet = facReg;
     } else {
         error(lines[wp], NOT_A_FACTOR);
     }
     printSyntax("<因子>");
     retArr[0] = ret;
-    retArr[1] = reg;
+    retArr[1] = value;
+    retArr[2] = factorRet;
     return retArr;
 }
 
@@ -560,15 +582,17 @@ void assignSentDef() {
     } else if (isConst(name, level)) {
         error(lines[wp - 1], CANT_CHANGE_CONST);
     }
-    int fromReg;
     if (symbleList[wp] == ASSIGN) {
         printWord();
-        fromReg = expressDef()[1];
-        emit(Assig, 2, fromReg, toReg);
+        int *re = expressDef();
+        int fromValue = re[1];
+        enum factorKind fromKind = re[2];
+        emit(Assig, 3, fromValue, fromKind, toReg);
     } else if (symbleList[wp] == LBRACK) {
         printWord();
         int *re = expressDef();
         int offset = re[1];
+        enum factorKind offKind = re[2];
         if (re[0] != INT) {
             error(lines[wp - 1], OFFSET_NOT_INT);
         }
@@ -577,8 +601,10 @@ void assignSentDef() {
         } else { printWord(); }
         assert(symbleList[wp], ASSIGN);
         printWord();
-        fromReg = expressDef()[1];
-        emit(ArrS, 4, name, toReg, offset, fromReg);
+        re = expressDef();
+        int fromValue = re[1];
+        enum factorKind fromKind = re[2];
+        emit(ArrS, 5, getArrLabel(name, level), offset, offKind, fromValue, fromKind);
     } else panic("assignSentDef");
     printSyntax("<赋值语句>");
 }
@@ -617,9 +643,11 @@ void conditSentDef() {
  * 条件
  */
 void conditDef() {
-    int regA, regB;
+    int valueA, valueB;
+    enum factorKind valueKindA, valueKindB;
     int *r1 = expressDef();
-    regA = r1[1];
+    valueA = r1[1];
+    valueKindA = r1[2];
     if (r1[0] != INT) {
         error(lines[wp - 1], CONDIT_ILLEGAL);
     }
@@ -628,12 +656,13 @@ void conditDef() {
         enum SYMBLE op = symbleList[wp];
         printWord();
         int *r2 = expressDef();
-        regB = r2[1];
+        valueB = r2[1];
+        valueKindB = r2[2];
         if (r2[0] != INT) {
             error(lines[wp - 1], CONDIT_ILLEGAL);
         }
         int reg = newRegister();
-        emit(Tuple, 4, MinuOp, regA, regB, reg);
+        emit(Tuple, 6, MinuOp, valueA, valueKindA, valueB, valueKindB, reg);
         switch (op) {
             //这里都是反的，因为考虑到大部分都是“满足则执行”，而branch逻辑是“满足即跳转”
             case LSS:
@@ -658,7 +687,12 @@ void conditDef() {
                 break;
         }
     } else {
-        branchP = emit(Bra, 3, regA, BEQ, NULL);
+        if (valueKindA != facReg) {
+            int reg = newRegister();
+            emit(Assig, 3, valueA, valueKindA, reg);
+            valueA = reg;
+        }
+        branchP = emit(Bra, 3, valueA, BEQ, NULL);
     }
     printSyntax("<条件>");
 }
@@ -715,8 +749,10 @@ void loopDef() {
         }
         assert(symbleList[wp], ASSIGN);
         printWord();
-        int fromReg = expressDef()[1];
-        emit(Assig, 2, fromReg, toReg);//赋值
+        int *re = expressDef();
+        int fromValue = re[1];
+        enum factorKind fromKind = re[2];
+        emit(Assig, 3, fromValue, fromKind, toReg);//赋值
         if (symbleList[wp] != SEMICN) {
             error(lines[wp - 1], MISS_SEMI);
         } else { printWord(); }
@@ -740,14 +776,12 @@ void loopDef() {
         asserts(symbleList[wp], PLUS, MINU);
         int minus = symbleList[wp] == MINU;
         printWord();
-        int value = stepDef();
+        int step = stepDef();
         if (symbleList[wp] != RPARENT) {
             error(lines[wp - 1], MISS_RPARENT);
         } else { printWord(); }
         sentDef();
-        int regB = newRegister();
-        emit(Eql, 2, value, regB);
-        emit(Tuple, 4, minus ? MinuOp : PlusOp, regA, regB, regC);
+        emit(Tuple, 6, minus ? MinuOp : PlusOp, facReg, regA, facInt, step, regC);
         emit(Goto, 1, labelP1->info);//跳转到函数头
         labelP2 = emit(Label, 1, genLabel());//函数尾END
         ((struct Bra *) branchP->info)->label = labelP2->info;//回填跳转位置到END
@@ -816,13 +850,14 @@ void assignParaDef(char *fname) {
         while (1) {
             int *re = expressDef();
             enum Type type = re[0];
-            int reg = re[1];
+            int value = re[1];
+            enum factorKind kind = re[2];
             int r;
             paraIndex++;
             if ((r = checkParaType(fname, paraIndex, type)) != SUCCESS) {
                 error(lines[wp - 1], r);
             }
-            emit(Push, 1, reg);
+            emit(Push, 2, value, kind);
             if (symbleList[wp] == COMMA) {
                 printWord();
                 continue;
@@ -881,8 +916,6 @@ void readSentDef() {
  * 写语句
  */
 void writeSentDef() {
-    int reg = -1;
-    enum Type t = VOID;
     assert(symbleList[wp], PRINTFTK);
     printWord();
     assert(symbleList[wp], LPARENT);
@@ -893,14 +926,25 @@ void writeSentDef() {
         if (symbleList[wp] == COMMA) {
             printWord();
             int *re = expressDef();
-            t = re[0];
-            reg = re[1];
+            enum Type t = re[0];
+            int value = re[1];
+            if (re[2] == facReg) {
+                emit(Write, 4, STR_REG, str, value, t);
+            } else {
+                emit(Write, 4, STR_VALUE, str, value, t);
+            }
+        } else {
+            emit(Write, 4, STR_ONLY, str, 0, 0);
         }
-        emit(Write, 3, str, reg, t);
     } else {
         int *re = expressDef();
-        reg = re[1];
-        emit(Write, 3, NULL, reg, re[0]);
+        enum Type t = re[0];
+        int value = re[1];
+        if (re[2] == facReg) {
+            emit(Write, 4, REG_ONLY, NULL, value, t);
+        } else {
+            emit(Write, 4, VALUE_ONLY, NULL, value, t);
+        }
     }
     if (symbleList[wp] != RPARENT) {
         error(lines[wp - 1], MISS_RPARENT);
@@ -919,6 +963,8 @@ void retDef() {
         printWord();
         int *r = expressDef();
         enum Type ret = r[0];
+        int value = r[1];
+        enum factorKind kind = r[2];
         if (checkRet) {
             if (retType == VOID) {
                 error(lines[wp], FORBID_RET);
@@ -926,7 +972,7 @@ void retDef() {
                 error(lines[wp], MISMATCH_RET);
             }
         }
-        emit(Ret, 1, r[1]);
+        emit(Ret, 2, value, kind);
         if (symbleList[wp] != RPARENT) {
             error(lines[wp - 1], MISS_RPARENT);
         } else { printWord(); }

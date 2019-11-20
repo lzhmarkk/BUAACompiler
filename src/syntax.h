@@ -8,7 +8,14 @@ enum SYMBLE symbleList[WORDSIZE];
 int lines[WORDSIZE];
 char tokenList[TOKENLENGTH][WORDSIZE];
 int wp;
-int retArr[2];
+//retArr[0]表示值的类型为int/char；retArr[1]表示返回值；retArr[2]表示返回值是一个寄存器标号，整形或字符
+int retArr[3];
+
+enum factorKind {
+    facInt,//表示返回值为一个整数
+    facChar,//表示返回值为一个字符
+    facReg//表示返回值为一个寄存器
+};
 
 void programDef();
 

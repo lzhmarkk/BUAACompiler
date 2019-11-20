@@ -16,9 +16,10 @@ struct Code *emit(enum CodeType t, int size, ...) {
         p->name = va_arg(vl, char*);
         p->paraSize = 0;
         new->info = p;
-    } else if (t == Push && size == 1) {
+    } else if (t == Push && size == 2) {
         struct Push *p = (struct Push *) malloc(sizeof(struct Push));
-        p->reg = va_arg(vl, int);
+        p->value = va_arg(vl, int);
+        p->kind = va_arg(vl, enum factorKind);
         new->info = p;
     } else if (t == Call && size == 1) {
         struct Call *p = (struct Call *) malloc(sizeof(struct Call));
@@ -32,9 +33,10 @@ struct Code *emit(enum CodeType t, int size, ...) {
         struct ReadRet *p = (struct ReadRet *) malloc(sizeof(struct ReadRet));
         p->reg = va_arg(vl, int);
         new->info = p;
-    } else if (t == Ret && size == 1) {
+    } else if (t == Ret && size == 2) {
         struct Ret *p = (struct Ret *) malloc(sizeof(struct Ret));
-        p->reg = va_arg(vl, int);
+        p->value = va_arg(vl, int);
+        p->kind = va_arg(vl, enum factorKind);
         new->info = p;
     } else if (t == Var && size == 4) {
         struct Var *p = (struct Var *) malloc(sizeof(struct Var));
@@ -50,21 +52,19 @@ struct Code *emit(enum CodeType t, int size, ...) {
         p->reg = va_arg(vl, int);
         p->value = va_arg(vl, int);
         new->info = p;
-    } else if (t == Tuple && size == 4) {
+    } else if (t == Tuple && size == 6) {
         struct Tuple *p = (struct Tuple *) malloc(sizeof(struct Tuple));
         p->op = va_arg(vl, enum Op);
-        p->regA = va_arg(vl, int);
-        p->regB = va_arg(vl, int);
+        p->valueA = va_arg(vl, int);
+        p->factorKindA = va_arg(vl, enum factorKind);
+        p->valueB = va_arg(vl, int);
+        p->factorKindB = va_arg(vl, enum factorKind);
         p->regC = va_arg(vl, int);
         new->info = p;
-    } else if (t == Assig && size == 2) {
+    } else if (t == Assig && size == 3) {
         struct Assig *p = (struct Assig *) malloc(sizeof(struct Assig));
-        p->from = va_arg(vl, int);
-        p->to = va_arg(vl, int);
-        new->info = p;
-    } else if (t == Eql && size == 2) {
-        struct Eql *p = (struct Eql *) malloc(sizeof(struct Eql));
-        p->value = va_arg(vl, int);
+        p->fromValue = va_arg(vl, int);
+        p->fromKind = va_arg(vl, enum factorKind);
         p->to = va_arg(vl, int);
         new->info = p;
     } else if (t == Goto && size == 1) {
@@ -83,27 +83,29 @@ struct Code *emit(enum CodeType t, int size, ...) {
         new->info = p;
     } else if (t == ArrL && size == 4) {
         struct ArrL *p = (struct ArrL *) malloc(sizeof(struct ArrL));
-        p->name = va_arg(vl, char*);
-        p->reg = va_arg(vl, int);
-        p->offset = va_arg(vl, int);
+        p->label = va_arg(vl, char*);
+        p->offsetValue = va_arg(vl, int);
+        p->offKind = va_arg(vl, enum factorKind);
         p->to = va_arg(vl, int);
         new->info = p;
-    } else if (t == ArrS && size == 4) {
+    } else if (t == ArrS && size == 5) {
         struct ArrS *p = (struct ArrS *) malloc(sizeof(struct ArrS));
-        p->name = va_arg(vl, char*);
-        p->reg = va_arg(vl, int);
-        p->offset = va_arg(vl, int);
-        p->from = va_arg(vl, int);
+        p->label = va_arg(vl, char*);
+        p->offsetValue = va_arg(vl, int);
+        p->offKind = va_arg(vl, enum factorKind);
+        p->fromValue = va_arg(vl, int);
+        p->fromKind = va_arg(vl, enum factorKind);
         new->info = p;
     } else if (t == Read && size == 2) {
         struct Read *p = (struct Read *) malloc(sizeof(struct Read));
         p->reg = va_arg(vl, int);
         p->type = va_arg(vl, enum Type);
         new->info = p;
-    } else if (t == Write && size == 3) {
+    } else if (t == Write && size == 4) {
         struct Write *p = (struct Write *) malloc(sizeof(struct Write));
+        p->writeType = va_arg(vl, enum WriteType);
         p->string = va_arg(vl, char*);
-        p->reg = va_arg(vl, int);
+        p->value = va_arg(vl, int);
         p->type = va_arg(vl, enum Type);
         new->info = p;
     }
@@ -194,6 +196,8 @@ enum BranchType reverse(enum BranchType type) {
             return BGT;
         case BLT:
             return BGE;
+        default:
+            return -1;
     }
 }
 
@@ -202,31 +206,47 @@ void printCode() {
     for (p = code; p != NULL; p = p->next) {
         switch (p->type) {
             case Func:
-                printf("f %s:\n", ((struct Func *) p->info)->name);
+                printf("%s():\n", ((struct Func *) p->info)->name);
                 break;
-            case Push:
-                printf("Push t%d\n", ((struct Push *) p->info)->reg);
+            case Push: {
+                struct Push *push = p->info;
+                if (push->kind == facInt) {
+                    printf("Push %d\n", push->value);
+                } else if (push->kind == facChar) {
+                    printf("Push \'%c\'\n", push->value);
+                } else {
+                    printf("Push $t%d\n", push->value);
+                }
                 break;
+            }
             case Call:
                 printf("Call %s\n", ((struct Call *) p->info)->func->name);
                 break;
             case Para:
-                printf("Para t%d\n", ((struct Para *) p->info)->reg);
+                printf("Para $t%d\n", ((struct Para *) p->info)->reg);
                 break;
-            case Ret:
-                printf("Return t%d\n", ((struct Ret *) p->info)->reg);
+            case Ret: {
+                struct Ret *ret = p->info;
+                if (ret->kind == facInt) {
+                    printf("Return %d\n", ret->value);
+                } else if (ret->kind == facChar) {
+                    printf("Return \'%c\'\n", ret->value);
+                } else {
+                    printf("Return $t%d\n", ret->value);
+                }
                 break;
+            }
             case ReadRet:
-                printf("getReturn t%d\n", ((struct ReadRet *) p->info)->reg);
+                printf("getReturn $t%d\n", ((struct ReadRet *) p->info)->reg);
                 break;
             case Var: {
                 struct Var *v = p->info;
-                printf("Var %s t%d %d\n", v->name, v->reg, v->size);
+                printf("Var %s $t%d %d\n", v->name, v->reg, v->size);
                 break;
             }
             case Const: {
                 struct Const *c = p->info;
-                printf("Const %s t%d = %d\n", c->name, c->reg, c->value);
+                printf("Const %s $t%d = %d\n", c->name, c->reg, c->value);
                 break;
             }
             case Tuple: {
@@ -245,18 +265,44 @@ void printCode() {
                     case DiviOp:
                         Op = '/';
                         break;
+                    default:
+                        Op = '?';
+                        break;
                 }
-                printf("t%d = t%d %c t%d\n", t->regC, t->regA, Op, t->regB);
-                break;
-            }
-            case Eql: {
-                struct Eql *e = p->info;
-                printf("t%d = %d\n", e->to, e->value);
+                switch (t->factorKindA) {
+                    case facInt:
+                        printf("$t%d = %d", t->regC, t->valueA);
+                        break;
+                    case facChar:
+                        printf("$t%d = \'%c\'", t->regC, t->valueA);
+                        break;
+                    case facReg:
+                        printf("$t%d = $t%d", t->regC, t->valueA);
+                        break;
+                }
+                printf(" %c ", Op);
+                switch (t->factorKindB) {
+                    case facInt:
+                        printf("%d\n", t->valueB);
+                        break;
+                    case facChar:
+                        printf("\'%c\'\n", t->valueB);
+                        break;
+                    case facReg:
+                        printf("$t%d\n", t->valueB);
+                        break;
+                }
                 break;
             }
             case Assig: {
                 struct Assig *a = p->info;
-                printf("t%d = t%d\n", a->to, a->from);
+                if (a->fromKind == facInt) {
+                    printf("$t%d = %d\n", a->to, a->fromValue);
+                } else if (a->fromKind == facChar) {
+                    printf("$t%d = \'%c\'\n", a->to, a->fromValue);
+                } else {
+                    printf("$t%d = $t%d\n", a->to, a->fromValue);
+                }
                 break;
             }
             case Goto:
@@ -293,31 +339,66 @@ void printCode() {
                 break;
             case ArrL: {
                 struct ArrL *a = p->info;
-                printf("t%d = t%d[t%d]\n", a->to, a->reg, a->offset);
+                printf("$t%d = %s", a->to, a->label);
+                if (a->offKind == facReg) {
+                    printf("[$t%d]\n", a->offsetValue);
+                } else {
+                    printf("[%d]\n", a->offsetValue);
+                }
                 break;
             }
             case ArrS: {
                 struct ArrS *a = p->info;
-                printf("t%d[t%d] = t%d\n", a->reg, a->offset, a->from);
-                break;
-                case Read: {
-                    struct Read *r = p->info;
-                    printf("Read%s t%d\n", r->type == INT ? "Int" : "Char", r->reg);
-                    break;
+                printf("%s", a->label);
+                if (a->offKind == facReg) {
+                    printf("[$t%d] = ", a->offsetValue);
+                } else {
+                    printf("[%d] = ", a->offsetValue);
                 }
-                case Write: {
-                    struct Write *w = p->info;
-                    if (w->string == NULL) {
-                        printf("Write%s t%d\n", w->type == INT ? "Int" : "Char", w->reg);
-                    } else if (w->reg == -1) {
-                        printf("WriteStr \"%s\"\n", w->string);
-                    } else {
-                        printf("WriteStr \"%s\" %s t%d\n", w->string, w->type == INT ? "Int" : "Char", w->reg);
+                if (a->fromKind == facChar) {
+                    printf("\'%c\'\n", a->fromValue);
+                } else if (a->fromKind == facInt) {
+                    printf("%d\n", a->fromValue);
+                } else {
+                    printf("$t%d\n", a->fromValue);
+                }
+                break;
+            }
+            case Read: {
+                struct Read *r = p->info;
+                printf("Read(%s) $t%d\n", r->type == INT ? "Int" : "Char", r->reg);
+                break;
+            }
+            case Write: {
+                struct Write *w = p->info;
+                printf("Write ");
+                switch (w->writeType) {
+                    case STR_ONLY:
+                        printf("\"%s\"\n", w->string);
+                        break;
+                    case REG_ONLY:
+                        printf("$t%d\n", w->value);
+                        break;
+                    case VALUE_ONLY: {
+                        if (w->type == INT)
+                            printf("%d\n", w->value);
+                        else
+                            printf("\'%c\'\n", w->value);
+                        break;
                     }
-                    break;
+                    case STR_REG:
+                        printf("\"%s\",$t%d\n", w->string, w->value);
+                        break;
+                    case STR_VALUE:
+                        if (w->type == INT)
+                            printf("\"%s\",%d\n", w->string, w->value);
+                        else
+                            printf("\"%s\",\'%c\'\n", w->string, w->value);
+                        break;
                 }
             }
         }
     }
+
 }
 

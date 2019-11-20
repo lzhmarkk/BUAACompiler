@@ -6,6 +6,7 @@ int tParaCount;
 
 void genMips() {
     hasEntry = 0;
+    arrayCount = 0;
     printMips(".text");
     printMips("la $s0,head");
     struct Code *p;
@@ -51,9 +52,6 @@ void genMips() {
                 break;
             case Tuple:
                 genTuple(p->info);
-                break;
-            case Eql:
-                genEql(p->info);
                 break;
             case Assig:
                 genAssig(p->info);
@@ -106,7 +104,11 @@ void genFunc(struct Func *p) {
 // todo:保存本函数涉及到的模拟寄存器的值
 void genPush(struct Push *p) {
     if (COMMENT)printMips("#参数入栈");
-    printMips("lw $t0,%d($s0)", p->reg * 4);
+    if (p->kind == facReg) {
+        printMips("li $t0,%d", p->value);
+    } else {
+        printMips("lw $t0,%d($s0)", p->value * 4);
+    }
     printMips("addi $sp,$sp,-4");
     printMips("sw $t0,0($sp)");
 }
@@ -144,11 +146,14 @@ void genReadRet(struct ReadRet *p) {
 void genRet(struct Ret *p) {
     if (COMMENT)printMips("#sp,ra出栈,并移除参数区");
     printMips("lw $ra,0($sp)");
-    //printMips("lw $sp,4($sp)");
     printMips("addi $sp,$sp,4");
     printMips("addi $sp,$sp,%d", paraCount * 4);
     if (COMMENT)printMips("#返回语句");
-    if (p->reg != 0)printMips("lw $v0,%d($s0)", p->reg * 4);
+    if (p->kind != facReg) {
+        printMips("li $v0,%d", p->value);
+    } else {
+        if (p->value != 0) printMips("lw $v0,%d($s0)", p->value * 4);
+    }
     printMips("jr $ra");
     printMips("nop");
     paraCount = 0;
@@ -158,9 +163,9 @@ void genRet(struct Ret *p) {
  * 生成变量定义（主要是分配数组空间）
  */
 void genVar(struct Var *p) {
-    if (p->size != 0) {
+    if (p->size != 0 && p->reg == -1) {
         //说明是一个数组
-        strcpy(arrLabList[arrayCount], getArrLab(p->reg));
+        strcpy(arrLabList[arrayCount], p->name);
         arrSizeList[arrayCount] = p->size;
         arrayCount++;
     }
@@ -179,27 +184,52 @@ void genConst(struct Const *p) {
  * 生成四元式
  */
 void genTuple(struct Tuple *p) {
-    printMips("lw $t0,%d($s0)", p->regA * 4);
-    printMips("lw $t1,%d($s0)", p->regB * 4);
+    if (COMMENT) {
+        if (p->op == PlusOp)printMips("#加法");
+        else if (p->op == MinuOp)printMips("#减法");
+        else if (p->op == MultOp)printMips("#乘法");
+        else if (p->op == DiviOp)printMips("#除法");
+    }
+    if (p->factorKindA == facReg) {
+        printMips("lw $t0,%d($s0)", p->valueA * 4);
+    } else {
+        printMips("li $t0,%d", p->valueA);
+    }
     switch (p->op) {
         case PlusOp: {
-            if (COMMENT)printMips("#加法");
-            printMips("add $t2,$t0,$t1");
+            if (p->factorKindB == facReg) {
+                printMips("lw $t1,%d($s0)", p->valueB * 4);
+                printMips("add $t2,$t0,$t1");
+            } else {
+                printMips("addi $t2,$t0,%d", p->valueB);
+            }
             break;
         }
         case MinuOp: {
-            if (COMMENT)printMips("#减法");
-            printMips("sub $t2,$t0,$t1");
+            if (p->factorKindB == facReg) {
+                printMips("lw $t1,%d($s0)", p->valueB * 4);
+                printMips("sub $t2,$t0,$t1");
+            } else {
+                printMips("subi $t2,$t0,%d", p->valueB);
+            }
             break;
         }
         case MultOp: {
-            if (COMMENT)printMips("#乘法");
+            if (p->factorKindB == facReg) {
+                printMips("lw $t1,%d($s0)", p->valueB * 4);
+            } else {
+                printMips("li $t1,%d", p->valueB);
+            }
             printMips("mult $t0,$t1");
             printMips("mflo $t2");
             break;
         }
         case DiviOp: {
-            if (COMMENT)printMips("#除法");
+            if (p->factorKindB == facReg) {
+                printMips("lw $t1,%d($s0)", p->valueB * 4);
+            } else {
+                printMips("li $t1,%d", p->valueB);
+            }
             printMips("div $t0,$t1");
             printMips("mflo $t2");
             break;
@@ -212,17 +242,12 @@ void genTuple(struct Tuple *p) {
  * 生成赋值语句（模拟寄存器到模拟寄存器）
  */
 void genAssig(struct Assig *p) {
-    if (COMMENT)printMips("#复制");
-    printMips("lw $t0,%d($s0)", p->from * 4);
-    printMips("sw $t0,%d($s0)", p->to * 4);
-}
-
-/**
- * 生成赋值语句（立即数到模拟寄存器）
- */
-void genEql(struct Eql *p) {
     if (COMMENT)printMips("#赋值");
-    printMips("li $t0,%d", p->value);
+    if (p->fromKind == facReg) {
+        printMips("lw $t0,%d($s0)", p->fromValue * 4);
+    } else {
+        printMips("li $t0,%d", p->fromValue);
+    }
     printMips("sw $t0,%d($s0)", p->to * 4);
 }
 
@@ -282,12 +307,14 @@ void genLab(struct Label *p) {
  */
 void genArrL(struct ArrL *p) {
     if (COMMENT)printMips("#读数组");
-    printMips("la $t0,%s", getArrLab(p->reg));
-    printMips("lw $t1,%d($s0)", p->offset * 4);
-    printMips("sll $t1,$t1,2");
-    printMips("add $t2,$t0,$t1");
-    printMips("lw $t3,0($t2)");
-    printMips("sw $t3,%d($s0)", p->to * 4);
+    if (p->offKind == facReg) {
+        printMips("lw $t0,%d($s0)", p->offsetValue * 4);
+        printMips("sll $t0,$t0,2");
+        printMips("lw $t1,%s($t0)", p->label);
+    } else {
+        printMips("lw $t1,%s+%d", p->label, p->offsetValue * 4);
+    }
+    printMips("sw $t1,%d($s0)", p->to * 4);
 }
 
 /**
@@ -295,12 +322,18 @@ void genArrL(struct ArrL *p) {
  */
 void genArrS(struct ArrS *p) {
     if (COMMENT)printMips("#写数组");
-    printMips("la $t0,%s", getArrLab(p->reg));
-    printMips("lw $t1,%d($s0)", p->offset * 4);
-    printMips("sll $t1,$t1,2");
-    printMips("add $t2,$t0,$t1");
-    printMips("lw $t3,%d($s0)", p->from * 4);
-    printMips("sw $t3,0($t2)");
+    if (p->fromKind == facReg) {
+        printMips("lw $t0,%d($s0)", p->fromValue * 4);
+    } else {
+        printMips("li $t0,%d", p->fromValue);
+    }
+    if (p->offKind == facReg) {
+        printMips("lw $t1,%d($s0)", p->offsetValue * 4);
+        printMips("sll $t1,$t1,2");
+        printMips("sw $t0,%s($t1)", p->label);
+    } else {
+        printMips("sw $t0,%s+%d", p->label, p->offsetValue * 4);
+    }
 }
 
 /**
@@ -317,25 +350,50 @@ void genRead(struct Read *p) {
  * 生成标准输出
  */
 void genWrite(struct Write *p) {
-    if (p->string == NULL && p->reg != -1) {
-        if (COMMENT)printMips("#写语句%s", p->type == INT ? "Int" : "Char");
-        printMips("li $v0,%d", p->type == INT ? 1 : 11);
-        printMips("lw $a0,%d($s0)", p->reg * 4);
-        printMips("syscall");
-    } else if (p->string != NULL && p->reg == -1) {
-        if (COMMENT)printMips("#写语句String");
-        printMips("li $v0,4");
-        printMips("la $a0,%s", getStrLab(p->string));
-        printMips("syscall");
-    } else {
-        if (COMMENT)printMips("#写语句String %s", p->type == INT ? "Int" : "Char");
-        printMips("li $v0,4");
-        printMips("la $a0,%s", getStrLab(p->string));
-        printMips("syscall");
-        printMips("li $v0,%d", p->type == INT ? 1 : 11);
-        printMips("lw $a0,%d($s0)", p->reg * 4);
-        printMips("syscall");
+    switch (p->writeType) {
+        case STR_ONLY: {
+            if (COMMENT)printMips("#写语句String");
+            printMips("li $v0,4");
+            printMips("la $a0,%s", getStrLab(p->string));
+            printMips("syscall");
+            break;
+        }
+        case REG_ONLY: {
+            if (COMMENT)printMips("#写语句Reg(%s)", p->type == INT ? "Int" : "Char");
+            printMips("li $v0,%d", p->type == INT ? 1 : 11);
+            printMips("lw $a0,%d($s0)", p->value * 4);
+            printMips("syscall");
+            break;
+        }
+        case VALUE_ONLY: {
+            if (COMMENT)printMips("#写语句Value(%s)", p->type == INT ? "Int" : "Char");
+            printMips("li $v0,%d", p->type == INT ? 1 : 11);
+            printMips("li $a0,%d", p->value);
+            printMips("syscall");
+            break;
+        }
+        case STR_REG: {
+            if (COMMENT)printMips("#写语句String,Reg(%s)", p->type == INT ? "Int" : "Char");
+            printMips("li $v0,4");
+            printMips("la $a0,%s", getStrLab(p->string));
+            printMips("syscall");
+            printMips("li $v0,%d", p->type == INT ? 1 : 11);
+            printMips("lw $a0,%d($s0)", p->value * 4);
+            printMips("syscall");
+            break;
+        }
+        case STR_VALUE: {
+            if (COMMENT)printMips("#写语句Value,Value(%s)", p->type == INT ? "Int" : "Char");
+            printMips("li $v0,4");
+            printMips("la $a0,%s", getStrLab(p->string));
+            printMips("syscall");
+            printMips("li $v0,%d", p->type == INT ? 1 : 11);
+            printMips("li $a0,%d", p->value);
+            printMips("syscall");
+            break;
+        }
     }
+    //输出\n
     printMips("li $v0,11");
     printMips("li $a0,10");
     printMips("syscall");
@@ -360,7 +418,7 @@ void initData() {
         printMips("    %s:.space %d", arrLabList[arrayCount], arrSizeList[arrayCount] * 4);
     }
     while (strCount--) {
-        printMips("    %s:.ascii \"%s\\0\"", strLabel[strCount], strList[strCount]);
+        printMips("    %s:.asciiz \"%s\"", strLabel[strCount], strList[strCount]);
     }
 }
 
@@ -381,19 +439,4 @@ char *getStrLab(char *str) {
     return strLabel[strCount++];
 }
 
-/**
- * 返回该数组的标签
- */
-char *getArrLab(int reg) {
-    arrayLabel[0] = 'a';
-    arrayLabel[1] = 'r';
-    arrayLabel[2] = 'r';
-    arrayLabel[3] = (char) (reg / 100 + '0');
-    arrayLabel[4] = (char) ((reg / 10) % 10 + '0');
-    arrayLabel[5] = (char) (reg % 10 + '0');
-    arrayLabel[6] = '\0';
-
-    return arrayLabel;
-}
-//todo 优化Tuple类型和Assig类型，删除掉Eql类
 //todo 尽量使用寄存器

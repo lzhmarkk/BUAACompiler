@@ -6,6 +6,8 @@
 
 int level;
 
+char arrayLabel[LABELLENGTH];//临时
+int arrayCount;//array的计数器
 /**
  * 标识符Kind和Type属性
  */
@@ -25,23 +27,23 @@ enum Type {
  * array和func的额外信息
  */
 struct ArrayTable {
-    enum Type type;
-    int size;
-    int addr;
+    enum Type type;//数组元素类型
+    int size;//数组大小
+    char label[LABELLENGTH];//用一个独特的标签代替可能重复的数组名
 };
 struct FuncTable {
-    int paraSize;
-    enum Type ret;
+    int paraSize;//参数个数
+    enum Type ret;//返回值类型
 };
 /**
  * 符号表的通用表项
  */
 struct Table {
-    char name[TOKENLENGTH];
+    char name[TOKENLENGTH];//名
     enum Kind kind;
     enum Type type;
-    int level;
-    int reg;
+    int level;//层级
+    int reg;//已分配寄存器
     void *info;//指向额外信息的指针
     struct Table *next;
 };
@@ -67,6 +69,10 @@ int isConst(char *name, int leve);
 void printTable();
 
 int __str2int(char *str);
+
+char *genArrLabel();
+
+char *getArrLabel(char *name, int leve);
 
 struct Table *table;
 

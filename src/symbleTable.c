@@ -10,7 +10,6 @@ void addToTable(char *name, enum Kind kind, enum Type type, int leve, int size, 
     strcpy(new->name, name);
     new->kind = kind;
     new->type = type;
-    new->reg = newRegister();//新分配一个reg个每个符号
     new->level = leve;
     new->next = NULL;
 
@@ -21,16 +20,19 @@ void addToTable(char *name, enum Kind kind, enum Type type, int leve, int size, 
         struct ArrayTable *newAT = (struct ArrayTable *) malloc(sizeof(struct ArrayTable));
         newAT->type = va_arg(vl, int);
         newAT->size = __str2int(va_arg(vl, char*));
-        newAT->addr = va_arg(vl, int);
+        strcpy(newAT->label, genArrLabel());//给数数组生成一个独特的伪名
+        new->reg = -1;//数组不分配寄存器
         new->info = newAT;
     } else if (kind == FUNC && type == VOID && size == 2) {
         //如果是一个函数
         struct FuncTable *newFT = (struct FuncTable *) malloc(sizeof(struct FuncTable));
         newFT->paraSize = va_arg(vl, int);
         newFT->ret = va_arg(vl, int);
+        new->reg = -1;
         new->info = newFT;
         saveRegister();
     } else {
+        new->reg = newRegister();
         new->info = NULL;
     }
 
@@ -199,7 +201,7 @@ int isConst(char *name, int leve) {
 }
 
 void printTable() {
-    printf("      Name  Kind  Type  Lev Reg\n");
+    printf("      Name  Kind  Type  Lev  Reg\n");
     struct Table *p;
     for (p = table; p != NULL; p = p->next) {
         char *kind = NULL, *type = NULL;
@@ -231,6 +233,48 @@ void printTable() {
                 type = "VOID";
                 break;
         }
-        printf("%10s %5s %5s %2d %3d\n", p->name, kind, type, p->level, p->reg);
+        if (p->kind == FUNC && p->type == VOID) {
+            printf("%10s %5s %5s   %2d  $t%d--return(%s)\n", p->name, kind, type, p->level, p->reg,
+                   ((struct FuncTable *) p->info)->ret == INT ? "INT" : "CHAR");
+        } else if (p->kind == VAR && p->type == ARRAY) {
+            struct ArrayTable *t = (struct ArrayTable *) p->info;
+            printf("%10s %5s %5s   %2d  $t%d--(%s) %s:\n", p->name, kind, type, p->level, p->reg,
+                   t->type == INT ? "INT" : "CHAR", t->label);
+        } else {
+            printf("%10s %5s %5s   %2d  $t%d\n", p->name, kind, type, p->level, p->reg);
+        }
     }
+}
+
+/**
+ * 生成该数组的标签
+ */
+char *genArrLabel() {
+    arrayLabel[0] = 'a';
+    arrayLabel[1] = 'r';
+    arrayLabel[2] = 'r';
+    arrayLabel[3] = (char) (arrayCount / 100 + '0');
+    arrayLabel[4] = (char) ((arrayCount / 10) % 10 + '0');
+    arrayLabel[5] = (char) (arrayCount % 10 + '0');
+    arrayLabel[6] = '\0';
+    arrayCount++;
+    return arrayLabel;
+}
+
+/**
+ * 获取该数组的标签
+ */
+char *getArrLabel(char *name, int leve) {
+    struct Table *p;
+    for (p = table; p != NULL; p = p->next) {
+        if (!strcmp(p->name, name) && p->level == leve) {
+            return ((struct ArrayTable *) p->info)->label;
+        }
+    }
+    for (p = table; p != NULL; p = p->next) {
+        if (!strcmp(p->name, name) && p->level == 0) {
+            return ((struct ArrayTable *) p->info)->label;
+        }
+    }
+    return NULL;
 }
