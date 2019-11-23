@@ -61,7 +61,7 @@ void assignSentDef();
 
 void conditSentDef();
 
-void conditDef();
+void *conditDef();
 
 void loopDef();
 

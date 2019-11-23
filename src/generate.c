@@ -2,7 +2,7 @@
 #include "string.h"
 
 #define COMMENT 1
-int tParaCount;
+struct Code *curCode;
 
 void genMips() {
     hasEntry = 0;
@@ -26,18 +26,45 @@ void genMips() {
                     t = t->next;
                 }
                 ((struct Func *) p->info)->paraSize = paraCount;
-                tParaCount = paraCount;
+                temP = p;
                 break;
             }
             case Push:
+                if (!startPush) {
+                    //在父函数调用(第一个push)之前保存父环境
+                    curCode = p;
+                    saveEnv();
+                    startPush = 1;
+                }
                 genPush(p->info);
                 break;
             case Call:
+                if (!startPush) {
+                    //在父函数调用之前保存父环境
+                    curCode = p;
+                    saveEnv();
+                    startPush = 1;
+                }
                 genCall(p->info);
+                startPush = 0;
+                //恢复父环境
+                revertEnv();
                 break;
-            case Para:
-                genPara(p->info);
+            case Para: {
+                //这里直接让p跳到最后一个参数的下一个，并从后往前反向读取参数
+                //这里直接把所有参数一次性读完
+                int t = 0;
+                struct Code *tp;
+                while (p->type == Para) {
+                    p = p->next;
+                    t++;
+                }
+                p = p->prev;
+                for (tp = p; tp->type == Para; tp = tp->prev, t--) {
+                    genPara(tp->info, t);
+                }
                 break;
+            }
             case Ret:
                 genRet(p->info);
                 break;
@@ -89,25 +116,24 @@ void genMips() {
 void genFunc(struct Func *p) {
     if (COMMENT)printMips("#函数头");
     printMips("%s:", p->name);
-    if (strcmp(p->name, "main") != 0) {
+    /*if (strcmp(p->name, "main") != 0) {
         //若不是main
         if (COMMENT)printMips("#保存环境");
         //printMips("sw $sp,4($sp)");
         printMips("addi $sp,$sp,-4");
         printMips("sw $ra,0($sp)");
-    }
+    }*/
 }
 
 /**
  * 生成参数入栈
  */
-// todo:保存本函数涉及到的模拟寄存器的值
 void genPush(struct Push *p) {
     if (COMMENT)printMips("#参数入栈");
     if (p->kind == facReg) {
-        printMips("li $t0,%d", p->value);
-    } else {
         printMips("lw $t0,%d($s0)", p->value * 4);
+    } else {
+        printMips("li $t0,%d", p->value);
     }
     printMips("addi $sp,$sp,-4");
     printMips("sw $t0,0($sp)");
@@ -125,11 +151,11 @@ void genCall(struct Call *p) {
 /**
  * 生成参数出栈
  */
-void genPara(struct Para *p) {
-    if (COMMENT)printMips("#参数%d出栈", tParaCount);
-    printMips("lw $t0,%d($sp)", (tParaCount - 1) * 4 + 4);
+void genPara(struct Para *p, int index) {
+    if (COMMENT)printMips("#参数%d出栈", index);
+    printMips("lw $t0,0($sp)");
+    printMips("addi $sp,$sp,4");
     printMips("sw $t0,%d($s0)", p->reg * 4);
-    tParaCount--;
 }
 
 /**
@@ -144,10 +170,10 @@ void genReadRet(struct ReadRet *p) {
  * 生成返回语句，并还原现场
  */
 void genRet(struct Ret *p) {
-    if (COMMENT)printMips("#sp,ra出栈,并移除参数区");
-    printMips("lw $ra,0($sp)");
-    printMips("addi $sp,$sp,4");
-    printMips("addi $sp,$sp,%d", paraCount * 4);
+    //if (COMMENT)printMips("#sp,ra出栈,并移除参数区");
+    //printMips("lw $ra,0($sp)");
+    //printMips("addi $sp,$sp,4");
+    //printMips("addi $sp,$sp,%d", paraCount * 4);
     if (COMMENT)printMips("#返回语句");
     if (p->kind != facReg) {
         printMips("li $v0,%d", p->value);
@@ -439,4 +465,115 @@ char *getStrLab(char *str) {
     return strLabel[strCount++];
 }
 
+void saveEnv() {
+    struct Code *c;
+    printMips("#保存环境");
+    for (c = temP->next; c != curCode; c = c->next) {
+        //从函数标签开始，找到参数和变量，并将其保存
+        if (c->type == Para) {
+            struct Para *pa = c->info;
+            printMips("lw $t0,%d($s0) #Save Para", pa->reg * 4);
+            __inSp();
+        } else if (c->type == Var) {
+            struct Var *v = c->info;
+            if (v->size == 0) {
+                //普通变量
+                printMips("lw $t0,%d($s0) #Save Var", v->reg * 4);
+                __inSp();
+            } else {
+                //数组变量
+                int t;
+                for (t = 0; t < v->size; t++) {
+                    printMips("lw $t0,%s+%d #Save %s[%d]", v->name, t * 4, v->name, t);
+                    __inSp();
+                }
+            }
+        } else if (c->type == Const) {
+        }//这里还保存了所有可能涉及到的中间变量(可优化)
+        else if (c->type == ReadRet) {
+            struct ReadRet *r = c->info;
+            printMips("lw $t0,%d($s0) #Save ReadRet", r->reg * 4);
+            __inSp();
+        } else if (c->type == Tuple) {
+            struct Tuple *t = c->info;
+            printMips("lw $t0,%d($s0) #Save Tuple", t->regC * 4);
+            __inSp();
+        } /*else if (c->type == Assig) {
+            struct Assig *a = c->info;
+            printMips("lw $t0,%d($s0) #Save Assig", a->to * 4);
+            __inSp();
+        }*/
+        else if (c->type == ArrL) {
+            struct ArrL *a = c->info;
+            printMips("lw $t0,%d($s0) #Save ArrL", a->to * 4);
+            __inSp();
+        }
+        //else break;
+    }
+    //将temP指向最后一个已存储的局部变量处,便于revertEnv
+    temP = c->prev;
+    printMips("addi $sp,$sp,-4 #Save $ra");
+    printMips("sw $ra,0($sp)");
+}
+
+void revertEnv() {
+    struct Code *c;
+    printMips("#恢复环境");
+    printMips("lw $ra,0($sp) #Revert $ra");
+    printMips("addi $sp,$sp,4");
+    for (c = temP; c->type != Func; c = c->prev) {
+        //从temP开始，往回找到参数、常量和变量，并将其恢复
+        if (c->type == Para) {
+            struct Para *pa = c->info;
+            __outSp("Para");
+            printMips("sw $t0,%d($s0)", pa->reg * 4);
+        } else if (c->type == Var) {
+            struct Var *v = c->info;
+            if (v->size == 0) {
+                //普通变量
+                __outSp("Var");
+                printMips("sw $t0,%d($s0)", v->reg * 4);
+            } else {
+                //数组变量
+                int t;
+                for (t = v->size - 1; t >= 0; t--) {
+                    __outSp("Revert array");
+                    printMips("sw $t0,%s+%d", v->name, t * 4);
+                }
+            }
+        } else if (c->type == Const) {
+        }//这里恢复了所有可能涉及的中间变量(可优化)
+        else if (c->type == ReadRet) {
+            struct ReadRet *r = c->info;
+            __outSp("ReadRet");
+            printMips("sw $t0,%d($s0)", r->reg * 4);
+        } else if (c->type == Tuple) {
+            struct Tuple *t = c->info;
+            __outSp("Tuple");
+            printMips("sw $t0,%d($s0)", t->regC * 4);
+        } /*else if (c->type == Assig) {
+            struct Assig *a = c->info;
+            __outSp("Assig");
+            printMips("sw $t0,%d($s0)", a->to * 4);
+        }*/
+        else if (c->type == ArrL) {
+            struct ArrL *a = c->info;
+            __outSp("ArrL");
+            printMips("sw $t0,%d($s0)", a->to * 4);
+        }
+        //else break;
+    }
+    //此时temP为函数label
+    temP = c;
+}
+
+void __inSp() {
+    printMips("addi $sp,$sp,-4");
+    printMips("sw $t0,0($sp)");
+}
+
+void __outSp(char *msg) {
+    printMips("lw $t0,0($sp) #Revert %s", msg);
+    printMips("addi $sp,$sp,4");
+}
 //todo 尽量使用寄存器

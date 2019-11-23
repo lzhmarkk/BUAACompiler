@@ -363,6 +363,7 @@ void mainDef() {
 /**
  * 表达式
  */
+//todo:-4识别为-4而不是0-4
 int *expressDef() {
     enum Type ret = INT;
     int valueA;
@@ -613,13 +614,12 @@ void assignSentDef() {
  * 条件语句
  */
 void conditSentDef() {
-    struct Code *thisBranchP, *labelP1, *labelP2, *ifP;
+    struct Code *branchP, *labelP1, *labelP2, *ifP;
     assert(symbleList[wp], IFTK);
     printWord();
     assert(symbleList[wp], LPARENT);
     printWord();
-    conditDef();//跳转位置尚未填写,存在branchP中
-    thisBranchP = branchP;
+    branchP = conditDef();//跳转位置尚未填写,存在branchP中
     if (symbleList[wp] != RPARENT) {
         error(lines[wp - 1], MISS_RPARENT);
     } else { printWord(); }
@@ -635,14 +635,15 @@ void conditSentDef() {
     } else {
         labelP1 = emit(Label, 1, genLabel());//if结束END1标签
     }
-    ((struct Bra *) thisBranchP->info)->label = labelP1->info;//回填END1至if中
+    ((struct Bra *) branchP->info)->label = labelP1->info;//回填END1至if中
     printSyntax("<条件语句>");
 }
 
 /**
  * 条件
  */
-void conditDef() {
+void *conditDef() {
+    struct Code *branchP = NULL;
     int valueA, valueB;
     enum factorKind valueKindA, valueKindB;
     int *r1 = expressDef();
@@ -695,6 +696,7 @@ void conditDef() {
         branchP = emit(Bra, 3, valueA, BEQ, NULL);
     }
     printSyntax("<条件>");
+    return branchP;
 }
 
 /**
@@ -702,13 +704,13 @@ void conditDef() {
  */
 void loopDef() {
     int r;
-    struct Code *labelP1, *labelP2;
+    struct Code *branchP, *labelP1, *labelP2;
     if (symbleList[wp] == WHILETK) {
         printWord();
         assert(symbleList[wp], LPARENT);
         printWord();
         labelP1 = emit(Label, 1, genLabel());//创建循环头LOOP标签
-        conditDef();//跳转位置尚未填写
+        branchP = conditDef();//跳转位置尚未填写
         if (symbleList[wp] != RPARENT) {
             error(lines[wp - 1], MISS_RPARENT);
         } else { printWord(); }
@@ -728,7 +730,7 @@ void loopDef() {
         if (symbleList[wp] == LPARENT) {
             assert(symbleList[wp], LPARENT);
             printWord();
-            conditDef();//跳转位置尚未填写
+            branchP = conditDef();//跳转位置尚未填写
             if (symbleList[wp] != RPARENT) {
                 error(lines[wp - 1], MISS_RPARENT);
             } else { printWord(); }
@@ -757,7 +759,7 @@ void loopDef() {
             error(lines[wp - 1], MISS_SEMI);
         } else { printWord(); }
         labelP1 = emit(Label, 1, genLabel());//循环头LOOP标签
-        conditDef();//跳转位置尚未填写
+        branchP = conditDef();//跳转位置尚未填写
         if (symbleList[wp] != SEMICN) {
             error(lines[wp - 1], MISS_SEMI);
         } else { printWord(); }
@@ -781,7 +783,7 @@ void loopDef() {
             error(lines[wp - 1], MISS_RPARENT);
         } else { printWord(); }
         sentDef();
-        emit(Tuple, 6, minus ? MinuOp : PlusOp, facReg, regA, facInt, step, regC);
+        emit(Tuple, 6, minus ? MinuOp : PlusOp, regA, facReg, step, facInt, regC);
         emit(Goto, 1, labelP1->info);//跳转到函数头
         labelP2 = emit(Label, 1, genLabel());//函数尾END
         ((struct Bra *) branchP->info)->label = labelP2->info;//回填跳转位置到END
@@ -816,7 +818,7 @@ int retFuncCallDef() {
     } else { printWord(); }
     int reg = newRegister();
     emit(Call, 1, getLabel(name)->info);
-    emit(ReadRet, 1, reg);
+    emit(ReadRet, 1, reg);//todo：有时候不用get return
     printSyntax("<有返回值函数调用语句>");
     return reg;
 }
@@ -978,6 +980,8 @@ void retDef() {
         } else { printWord(); }
     } else if (checkRet && retType != VOID) {
         error(lines[wp], MISMATCH_RET);
+    } else {
+        emit(Ret, 2, 0, facReg);
     }
     printSyntax("<返回语句>");
 }

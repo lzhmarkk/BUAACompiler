@@ -10,7 +10,6 @@ struct Code *code;
 int loopCount;
 char labelBase[LABELSIZE][LABELLENGTH];//存储中间代码中所有Label
 
-struct Code *branchP;
 
 enum Op {
     PlusOp,
