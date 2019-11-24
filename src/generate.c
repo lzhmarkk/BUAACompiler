@@ -461,7 +461,15 @@ char *getStrLab(char *str) {
     strLabel[strCount][5] = (char) (strCount % 10 + '0');
     strLabel[strCount][6] = '\0';
 
-    strcpy(strList[strCount], str);
+    int t;
+    for (t = 0; *str; str++, t++) {
+        if (*str == '\\') {
+            strList[strCount][t] = '\\';
+            t++;
+        }
+        strList[strCount][t] = *str;
+    }
+    //strcpy(strList[strCount], str);
     return strLabel[strCount++];
 }
 
