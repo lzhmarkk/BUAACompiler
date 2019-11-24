@@ -812,12 +812,14 @@ int retFuncCallDef() {
     }
     assert(symbleList[wp], LPARENT);
     printWord();
+    emit(SavEnv, 0);
     assignParaDef(tokenList[wp - 2]);
     if (symbleList[wp] != RPARENT) {
         error(lines[wp - 1], MISS_RPARENT);
     } else { printWord(); }
     int reg = newRegister();
     emit(Call, 1, getLabel(name)->info);
+    emit(RevEnv, 0);
     emit(ReadRet, 1, reg);//todo：有时候不用get return
     printSyntax("<有返回值函数调用语句>");
     return reg;
@@ -835,11 +837,13 @@ void unRetFuncCallDef() {
     }
     assert(symbleList[wp], LPARENT);
     printWord();
+    emit(SavEnv, 0);
     assignParaDef(tokenList[wp - 2]);
     if (symbleList[wp] != RPARENT) {
         error(lines[wp - 1], MISS_RPARENT);
     } else { printWord(); }
     emit(Call, 1, getLabel(name)->info);
+    emit(RevEnv, 0);
     printSyntax("<无返回值函数调用语句>");
 }
 

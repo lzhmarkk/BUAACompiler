@@ -2,7 +2,11 @@
 #include "string.h"
 
 #define COMMENT 1
-struct Code *curCode;
+//记录每个saveEnv的位置，便于从函数头开始找到所有的局部变量和revert时按照倒序恢复局部变量
+struct Code *curCode[ENV_STACK_LENGTH];
+int curCodeSp;
+//函数头指针
+struct Code *fhead;
 
 void genMips() {
     hasEntry = 0;
@@ -26,29 +30,14 @@ void genMips() {
                     t = t->next;
                 }
                 ((struct Func *) p->info)->paraSize = paraCount;
-                temP = p;
+                fhead = p;
                 break;
             }
             case Push:
-                if (!startPush) {
-                    //在父函数调用(第一个push)之前保存父环境
-                    curCode = p;
-                    saveEnv();
-                    startPush = 1;
-                }
                 genPush(p->info);
                 break;
             case Call:
-                if (!startPush) {
-                    //在父函数调用之前保存父环境
-                    curCode = p;
-                    saveEnv();
-                    startPush = 1;
-                }
                 genCall(p->info);
-                startPush = 0;
-                //恢复父环境
-                revertEnv();
                 break;
             case Para: {
                 //这里直接让p跳到最后一个参数的下一个，并从后往前反向读取参数
@@ -103,6 +92,15 @@ void genMips() {
                 break;
             case Write:
                 genWrite(p->info);
+                break;
+            case SavEnv:
+                curCode[curCodeSp] = p;
+                saveEnv();
+                curCodeSp++;
+                break;
+            case RevEnv:
+                curCodeSp--;
+                revertEnv();
                 break;
         }
     }
@@ -473,10 +471,13 @@ char *getStrLab(char *str) {
     return strLabel[strCount++];
 }
 
+/**
+ * 保存局部变量(运行环境)
+ */
 void saveEnv() {
     struct Code *c;
     printMips("#保存环境");
-    for (c = temP->next; c != curCode; c = c->next) {
+    for (c = fhead->next; c != curCode[curCodeSp]; c = c->next) {
         //从函数标签开始，找到参数和变量，并将其保存
         if (c->type == Para) {
             struct Para *pa = c->info;
@@ -518,18 +519,19 @@ void saveEnv() {
         }
         //else break;
     }
-    //将temP指向最后一个已存储的局部变量处,便于revertEnv
-    temP = c->prev;
     printMips("addi $sp,$sp,-4 #Save $ra");
     printMips("sw $ra,0($sp)");
 }
 
+/**
+ * 恢复局部变量(运行环境)
+ */
 void revertEnv() {
     struct Code *c;
     printMips("#恢复环境");
     printMips("lw $ra,0($sp) #Revert $ra");
     printMips("addi $sp,$sp,4");
-    for (c = temP; c->type != Func; c = c->prev) {
+    for (c = curCode[curCodeSp]; c != fhead; c = c->prev) {
         //从temP开始，往回找到参数、常量和变量，并将其恢复
         if (c->type == Para) {
             struct Para *pa = c->info;
@@ -545,7 +547,7 @@ void revertEnv() {
                 //数组变量
                 int t;
                 for (t = v->size - 1; t >= 0; t--) {
-                    __outSp("Revert array");
+                    __outSp("Array");
                     printMips("sw $t0,%s+%d", v->name, t * 4);
                 }
             }
@@ -571,8 +573,6 @@ void revertEnv() {
         }
         //else break;
     }
-    //此时temP为函数label
-    temP = c;
 }
 
 void __inSp() {

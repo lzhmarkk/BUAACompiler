@@ -108,6 +108,10 @@ struct Code *emit(enum CodeType t, int size, ...) {
         p->value = va_arg(vl, int);
         p->type = va_arg(vl, enum Type);
         new->info = p;
+    } else if (t == SavEnv && size == 0) {
+        new->info = NULL;
+    } else if (t == RevEnv && size == 0) {
+        new->info = NULL;
     }
 
     if (code == NULL) {
@@ -396,7 +400,14 @@ void printCode() {
                             printf("\"%s\",\'%c\'\n", w->string, w->value);
                         break;
                 }
+                break;
             }
+            case SavEnv:
+                printf("Save Env\n");
+                break;
+            case RevEnv:
+                printf("Revert Env\n");
+                break;
         }
     }
 

@@ -5,8 +5,7 @@
 
 /**
  * 函数调用栈示意图
- * 父函数：在第一个push之前(有参数)或者call之前(无参数)
- * 父函数：保存自己用到的所有局部变量（含参数,普通变量和数组变量)以及$ra
+ * 父函数：在函数调用的参数之前保存自己用到的所有局部变量（含参数,普通变量和数组变量)以及$ra
  * 父函数：push所有的实参
  *  ________ _______ _______
  * |  t6    |       |       |
@@ -33,8 +32,6 @@ int strCount;//string的计数器
 char arrLabList[LABELSIZE][LABELLENGTH];//array的label，用于开辟空间
 int arrSizeList[LABELSIZE];//array的大小，用于开辟空间
 int hasEntry;//遇到Func即置1
-int startPush;
-struct Code *temP;
 
 void genMips();
 

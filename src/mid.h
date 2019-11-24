@@ -18,23 +18,25 @@ enum Op {
     DiviOp
 };
 enum CodeType {
-    Func,
-    Push,
-    Call,
-    Para,
-    Ret,
-    ReadRet,
-    Var,
-    Const,
-    Tuple,
-    Assig,
-    Goto,
-    Bra,
-    Label,
-    ArrL,
-    ArrS,
-    Read,
-    Write
+    Func,//函数头
+    Push,//参数入栈(传入)
+    Call,//调用函数
+    Para,//参数出栈(读取)
+    Ret,//返回
+    ReadRet,//读取函数返回值
+    Var,//变量
+    Const,//常量
+    Tuple,//四元式
+    Assig,//赋值
+    Goto,//无条件跳转
+    Bra,//有条件跳转
+    Label,//标签
+    ArrL,//读数组
+    ArrS,//写数组
+    Read,//读变量
+    Write,//写字符串或变量
+    SavEnv,//保存环境
+    RevEnv//回复环境
 };
 enum BranchType {
     BEQ,
