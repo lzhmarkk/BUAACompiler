@@ -19,7 +19,9 @@ void genMips() {
             case Func: {
                 if (!hasEntry) {
                     hasEntry = 1;
-                    printMips("j Main");
+                    printMips("jal Main");
+                    printMips("nop");
+                    printMips("j END");
                     printMips("nop");
                 }
                 genFunc(p->info);
@@ -427,6 +429,7 @@ void genWrite(struct Write *p) {
  * main中生成return
  */
 void end() {
+    printMips("END:");
     printMips("li $v0,10");
     printMips("syscall");
     printMips("\n");
