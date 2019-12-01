@@ -3,7 +3,9 @@
 #include "symbleTable.h"
 #include "error.h"
 #include "mid.h"
+#include "string.h"
 
+char *curFunc;
 /**
  * 程序
  */
@@ -157,13 +159,15 @@ void explnheadDef() {
         enum Type t = symbleList[wp] == INTTK ? INT : symbleList[wp] == CHARTK ? CHAR : VOID;
         printWord();
         idenDef();
-        if ((r = checkRedef(tokenList[wp - 1], 0)) != SUCCESS) {
+        char *name = tokenList[wp - 1];
+        if ((r = checkRedef(name, 0)) != SUCCESS) {
             error(lines[wp - 1], r);
         } else {
-            addToTable(tokenList[wp - 1], FUNC, VOID, 0, 2, 666, t);
-            emit(Func, 1, tokenList[wp - 1]);
+            addToTable(name, FUNC, VOID, 0, 2, 666, t);
+            emit(Func, 1, name);
         }
         retType = t;
+        curFunc = name;
     } else {
         panic("explnheadDef");
     }
@@ -254,6 +258,7 @@ void retFuncDef() {
         error(lines[wp - 1], MISS_RET);
     }
     checkRet = 0;
+    curFunc = NULL;
     printSyntax("<有返回值函数定义>");
 }
 
@@ -273,6 +278,7 @@ void unRetFuncDef() {
         emit(Func, 1, name);
     }
     retType = VOID;
+    curFunc = name;
     checkRet = 1;
     hasRet = 0;
     assert(symbleList[wp], LPARENT);
@@ -288,6 +294,7 @@ void unRetFuncDef() {
     printWord();
     checkRet = 0;
     emit(Ret, 2, 0, facReg);//象征性返回0寄存器
+    curFunc = NULL;
     printSyntax("<无返回值函数定义>");
 }
 
@@ -812,14 +819,15 @@ int retFuncCallDef() {
     }
     assert(symbleList[wp], LPARENT);
     printWord();
-    emit(SavEnv, 0);
+    int isRecursion = curFunc ? !strcmp(name, curFunc) : 0;
+    emit(SavEnv, 1, isRecursion);
     assignParaDef(tokenList[wp - 2]);
     if (symbleList[wp] != RPARENT) {
         error(lines[wp - 1], MISS_RPARENT);
     } else { printWord(); }
     int reg = newRegister();
     emit(Call, 1, getLabel(name)->info);
-    emit(RevEnv, 0);
+    emit(RevEnv, 1, isRecursion);
     emit(ReadRet, 1, reg);//todo：有时候不用get return
     printSyntax("<有返回值函数调用语句>");
     return reg;
@@ -837,13 +845,14 @@ void unRetFuncCallDef() {
     }
     assert(symbleList[wp], LPARENT);
     printWord();
-    emit(SavEnv, 0);
+    int isRecursion = curFunc ? !strcmp(name, curFunc) : 0;
+    emit(SavEnv, 1, isRecursion);
     assignParaDef(tokenList[wp - 2]);
     if (symbleList[wp] != RPARENT) {
         error(lines[wp - 1], MISS_RPARENT);
     } else { printWord(); }
     emit(Call, 1, getLabel(name)->info);
-    emit(RevEnv, 0);
+    emit(RevEnv, 1, isRecursion);
     printSyntax("<无返回值函数调用语句>");
 }
 

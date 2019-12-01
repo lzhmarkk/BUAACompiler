@@ -97,12 +97,12 @@ void genMips() {
                 break;
             case SavEnv:
                 curCode[curCodeSp] = p;
-                saveEnv();
+                saveEnv(((struct SavEnv *) p->info)->isRecursion);
                 curCodeSp++;
                 break;
             case RevEnv:
                 curCodeSp--;
-                revertEnv();
+                revertEnv(((struct RevEnv *) p->info)->isRecursion);
                 break;
         }
     }
@@ -477,7 +477,7 @@ char *getStrLab(char *str) {
 /**
  * 保存局部变量(运行环境)
  */
-void saveEnv() {
+void saveEnv(int isRecursion) {
     struct Code *c;
     printMips("#保存环境");
     for (c = fhead->next; c != curCode[curCodeSp]; c = c->next) {
@@ -493,11 +493,13 @@ void saveEnv() {
                 printMips("lw $t0,%d($s0) #Save Var", v->reg * 4);
                 __inSp();
             } else {
-                //数组变量
-                int t;
-                for (t = 0; t < v->size; t++) {
-                    printMips("lw $t0,%s+%d #Save %s[%d]", v->name, t * 4, v->name, t);
-                    __inSp();
+                if (isRecursion) {
+                    //数组变量
+                    int t;
+                    for (t = 0; t < v->size; t++) {
+                        printMips("lw $t0,%s+%d #Save %s[%d]", v->name, t * 4, v->name, t);
+                        __inSp();
+                    }
                 }
             }
         } else if (c->type == Const) {
@@ -529,7 +531,7 @@ void saveEnv() {
 /**
  * 恢复局部变量(运行环境)
  */
-void revertEnv() {
+void revertEnv(int isRecursion) {
     struct Code *c;
     printMips("#恢复环境");
     printMips("lw $ra,0($sp) #Revert $ra");
@@ -547,11 +549,13 @@ void revertEnv() {
                 __outSp("Var");
                 printMips("sw $t0,%d($s0)", v->reg * 4);
             } else {
-                //数组变量
-                int t;
-                for (t = v->size - 1; t >= 0; t--) {
-                    __outSp("Array");
-                    printMips("sw $t0,%s+%d", v->name, t * 4);
+                if (isRecursion) {
+                    //数组变量
+                    int t;
+                    for (t = v->size - 1; t >= 0; t--) {
+                        __outSp("Array");
+                        printMips("sw $t0,%s+%d", v->name, t * 4);
+                    }
                 }
             }
         } else if (c->type == Const) {

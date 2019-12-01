@@ -108,10 +108,14 @@ struct Code *emit(enum CodeType t, int size, ...) {
         p->value = va_arg(vl, int);
         p->type = va_arg(vl, enum Type);
         new->info = p;
-    } else if (t == SavEnv && size == 0) {
-        new->info = NULL;
-    } else if (t == RevEnv && size == 0) {
-        new->info = NULL;
+    } else if (t == SavEnv && size == 1) {
+        struct SavEnv *s = (struct SavEnv *) malloc(sizeof(struct SavEnv));
+        s->isRecursion = va_arg(vl, int);
+        new->info = s;
+    } else if (t == RevEnv && size == 1) {
+        struct RevEnv *r = (struct RevEnv *) malloc(sizeof(struct RevEnv));
+        r->isRecursion = va_arg(vl, int);
+        new->info = r;
     }
 
     if (code == NULL) {
@@ -403,10 +407,10 @@ void printCode() {
                 break;
             }
             case SavEnv:
-                printf("Save Env\n");
+                printf("Save Env(%1d)\n", ((struct SavEnv *) (p->info))->isRecursion);
                 break;
             case RevEnv:
-                printf("Revert Env\n");
+                printf("Revert Env(%1d)\n", ((struct RevEnv *) (p->info))->isRecursion);
                 break;
         }
     }

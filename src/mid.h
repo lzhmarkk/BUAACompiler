@@ -134,7 +134,12 @@ struct Write {
     int value;//值
     enum Type type;//值的类型(int,char)
 };
-
+struct SavEnv {
+    int isRecursion;//是否为递归前的环境保存;如果是,则要保存局部数组
+};
+struct RevEnv {
+    int isRecursion;//是否为递归后的环境恢复
+};
 struct Code {
     enum CodeType type;
     void *info;

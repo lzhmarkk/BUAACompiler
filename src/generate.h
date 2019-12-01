@@ -77,9 +77,9 @@ void initData();
 
 char *getStrLab(char *str);
 
-void saveEnv();
+void saveEnv(int isRecursion);
 
-void revertEnv();
+void revertEnv(int isRecursion);
 
 void __inSp();
 
