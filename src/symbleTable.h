@@ -35,6 +35,9 @@ struct FuncTable {
     int paraSize;//参数个数
     enum Type ret;//返回值类型
 };
+struct ConstTable {
+    int value;//常量的值
+};
 /**
  * 符号表的通用表项
  */
@@ -65,6 +68,8 @@ int checkParaSize(char *fname, int paraIndex);
 enum Type getType(char *name, int leve);
 
 int isConst(char *name, int leve);
+
+int getConstValue(char *name, int leve);
 
 void printTable();
 

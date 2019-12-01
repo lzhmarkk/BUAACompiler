@@ -31,6 +31,12 @@ void addToTable(char *name, enum Kind kind, enum Type type, int leve, int size, 
         new->reg = -1;
         new->info = newFT;
         saveRegister();
+    } else if (kind == CONST && size == 1) {
+        //如果是一个常量
+        struct ConstTable *newCT = (struct ConstTable *) malloc(sizeof(struct ConstTable));
+        newCT->value = va_arg(vl, int);
+        new->reg = -1;
+        new->info = newCT;
     } else {
         new->reg = newRegister();
         new->info = NULL;
@@ -200,6 +206,26 @@ int isConst(char *name, int leve) {
     return 0;
 }
 
+
+int getConstValue(char *name, int leve) {
+    struct Table *p;
+    for (p = table; p != NULL; p = p->next) {
+        if (!strcmp(p->name, name) && p->level == leve) {
+            if (p->kind == CONST) {
+                return ((struct ConstTable *) p->info)->value;
+            } else panic("should be a const");
+        }
+    }
+    for (p = table; p != NULL; p = p->next) {
+        if (!strcmp(p->name, name) && p->level == 0) {
+            if (p->kind == CONST) {
+                return ((struct ConstTable *) p->info)->value;
+            } else panic("should be a const");
+        }
+    }
+    return 0;
+}
+
 void printTable() {
     printf("      Name  Kind  Type  Lev  Reg\n");
     struct Table *p;
@@ -240,6 +266,9 @@ void printTable() {
             struct ArrayTable *t = (struct ArrayTable *) p->info;
             printf("%10s %5s %5s   %2d  $t%d--(%s) %s:\n", p->name, kind, type, p->level, p->reg,
                    t->type == INT ? "INT" : "CHAR", t->label);
+        } else if (p->kind == CONST) {
+            printf("%10s %5s %5s   %2d  $t%d--%d\n", p->name, kind, type, p->level, p->reg,
+                   ((struct ConstTable *) p->info)->value);
         } else {
             printf("%10s %5s %5s   %2d  $t%d\n", p->name, kind, type, p->level, p->reg);
         }

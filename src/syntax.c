@@ -83,11 +83,6 @@ void constDef() {
             assert(symbleList[wp], IDENFR);
             idenDef();
             char *name = tokenList[wp - 1];
-            if ((r = checkRedef(name, level)) != SUCCESS) {
-                error(lines[wp - 1], r);
-            } else {
-                addToTable(name, CONST, t, level, 0);
-            }
             assert(symbleList[wp], ASSIGN);
             printWord();
 
@@ -99,6 +94,11 @@ void constDef() {
             } else if (symbleList[wp] == CHARCON) {
                 value = charDef();
                 type = CHAR;
+            }
+            if ((r = checkRedef(name, level)) != SUCCESS) {
+                error(lines[wp - 1], r);
+            } else {
+                addToTable(name, CONST, t, level, 1, value);
             }
             emit(Const, 4, type, name, getReg(name, level), value);
             if (symbleList[wp] == COMMA) {
@@ -477,7 +477,12 @@ int *factorDef() {
             } else { printWord(); }
         }
         ret = getType(name, level);
-        factorRet = facReg;
+        if (isConst(name, level)) {
+            value = getConstValue(name, level);
+            factorRet = ret == CHAR ? facChar : facInt;
+        } else {
+            factorRet = facReg;
+        }
     } else if (symbleList[wp] == LPARENT) {
         printWord();
         int *re = expressDef();
