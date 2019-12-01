@@ -3,7 +3,8 @@
 
 #include "symbleTable.h"
 
-int Register;
+int Register;//空出t0和t1作为中间结果寄存器
+int maxRegister;
 int saveReg;
 struct Code *code;
 

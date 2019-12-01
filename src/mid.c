@@ -131,6 +131,8 @@ struct Code *emit(enum CodeType t, int size, ...) {
 }
 
 int newRegister() {
+    if (Register == 0)Register++;//空出t0和t1
+    else if (Register > maxRegister)maxRegister = Register;
     return ++Register;
 }
 
@@ -139,7 +141,7 @@ void saveRegister() {
 }
 
 void revertRegister() {
-    //Register = saveReg;
+    Register = saveReg;
 }
 
 /**

@@ -440,7 +440,7 @@ void end() {
  */
 void initData() {
     printMips(".data");
-    printMips("    head:.space %d", (Register + 1) * 4);
+    printMips("    head:.space %d", (maxRegister + 1) * 4);
     while (arrayCount--) {
         printMips("    %s:.space %d", arrLabList[arrayCount], arrSizeList[arrayCount] * 4);
     }
