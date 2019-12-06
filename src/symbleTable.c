@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "error.h"
-#include "mid.h"
+#include "reg.h"
 
 void addToTable(char *name, enum Kind kind, enum Type type, int leve, int size, ...) {
     struct Table *new = (struct Table *) malloc(sizeof(struct Table));
@@ -21,24 +21,29 @@ void addToTable(char *name, enum Kind kind, enum Type type, int leve, int size, 
         newAT->type = va_arg(vl, int);
         newAT->size = __str2int(va_arg(vl, char*));
         strcpy(newAT->label, genArrLabel());//给数数组生成一个独特的伪名
-        new->reg = -1;//数组不分配寄存器
+        new->reg = 0;//数组不分配寄存器
         new->info = newAT;
     } else if (kind == FUNC && type == VOID && size == 2) {
         //如果是一个函数
         struct FuncTable *newFT = (struct FuncTable *) malloc(sizeof(struct FuncTable));
         newFT->paraSize = va_arg(vl, int);
         newFT->ret = va_arg(vl, int);
-        new->reg = -1;
+        new->reg = 0;//函数不分配寄存器
         new->info = newFT;
-        saveRegister();
     } else if (kind == CONST && size == 1) {
         //如果是一个常量
         struct ConstTable *newCT = (struct ConstTable *) malloc(sizeof(struct ConstTable));
         newCT->value = va_arg(vl, int);
-        new->reg = -1;
+        new->reg = 0;//常量采用传播，不使用寄存器
         new->info = newCT;
     } else {
-        new->reg = newRegister();
+        if (leve == 0) {
+            //说明是全局变量
+            new->reg = alloRegGlo();
+        } else {
+            //局部变量
+            new->reg = alloReg();
+        }
         new->info = NULL;
     }
 
@@ -260,17 +265,23 @@ void printTable() {
                 break;
         }
         if (p->kind == FUNC && p->type == VOID) {
-            printf("%10s %5s %5s   %2d  $t%d--return(%s)\n", p->name, kind, type, p->level, p->reg,
+            printf("%10s %5s %5s   %2d      --return(%s)\n", p->name, kind, type, p->level,
                    ((struct FuncTable *) p->info)->ret == INT ? "INT" : "CHAR");
         } else if (p->kind == VAR && p->type == ARRAY) {
             struct ArrayTable *t = (struct ArrayTable *) p->info;
-            printf("%10s %5s %5s   %2d  $t%d--(%s) %s:\n", p->name, kind, type, p->level, p->reg,
+            printf("%10s %5s %5s   %2d      --(%s) %s:\n", p->name, kind, type, p->level,
                    t->type == INT ? "INT" : "CHAR", t->label);
         } else if (p->kind == CONST) {
-            printf("%10s %5s %5s   %2d  $t%d--%d\n", p->name, kind, type, p->level, p->reg,
+            printf("%10s %5s %5s   %2d      --%d\n", p->name, kind, type, p->level,
                    ((struct ConstTable *) p->info)->value);
         } else {
-            printf("%10s %5s %5s   %2d  $t%d\n", p->name, kind, type, p->level, p->reg);
+            if (p->reg < 0) {
+                printf("%10s %5s %5s   %2d  $t%d(Mem)\n", p->name, kind, type, p->level, -p->reg);
+            } else if (p->reg >= GLO) {
+                printf("%10s %5s %5s   %2d  $t%d(Glo)\n", p->name, kind, type, p->level, p->reg - GLO);
+            } else {
+                printf("%10s %5s %5s   %2d  $t%d\n", p->name, kind, type, p->level, p->reg);
+            }
         }
     }
 }

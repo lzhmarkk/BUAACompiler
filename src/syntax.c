@@ -4,8 +4,10 @@
 #include "error.h"
 #include "mid.h"
 #include "string.h"
+#include "reg.h"
 
 char *curFunc;
+
 /**
  * 程序
  */
@@ -32,7 +34,7 @@ void programDef() {
         } else {
             break;
         }
-        revertRegister();
+        clearReg();
     }
     level++;
     mainDef();
@@ -383,7 +385,10 @@ int *expressDef() {
         valueA = r[1];
         factorRetA = r[2];
         if (minus) {
-            int regC = newRegister();
+            if (factorRetA == facReg && isRegTmp(valueA)) {
+                clearRegTmp(valueA);
+            }
+            int regC = alloRegTmp();
             emit(Tuple, 6, MinuOp, 0, facInt, valueA, factorRetA, regC);
             valueA = regC;
             factorRetA = facReg;
@@ -403,7 +408,13 @@ int *expressDef() {
             int *r = itemDef();
             int valueB = r[1];
             enum factorKind factorRetB = r[2];
-            int regC = newRegister();
+            if (factorRetA == facReg && isRegTmp(valueA)) {
+                clearRegTmp(valueA);
+            }
+            if (factorRetB == facReg && isRegTmp(valueB)) {
+                clearRegTmp(valueB);
+            }
+            int regC = alloRegTmp();
             emit(Tuple, 6, minus ? MinuOp : PlusOp, valueA, factorRetA, valueB, factorRetB, regC);
             valueA = regC;
             factorRetA = facReg;
@@ -435,7 +446,13 @@ int *itemDef() {
             int *re = factorDef();
             int valueB = re[1];
             enum factorKind factorRetB = re[2];
-            int regC = newRegister();
+            if (factorRetA == facReg && isRegTmp(valueA)) {
+                clearRegTmp(valueA);
+            }
+            if (factorRetB == facReg && isRegTmp(valueB)) {
+                clearRegTmp(valueB);
+            }
+            int regC = alloRegTmp();
             emit(Tuple, 6, divu ? DiviOp : MultOp, valueA, factorRetA, valueB, factorRetB, regC);
             valueA = regC;
             factorRetA = facReg;
@@ -470,7 +487,10 @@ int *factorDef() {
             if (re[0] != INT) {
                 error(lines[wp - 1], OFFSET_NOT_INT);
             }
-            value = newRegister();
+            if (re[2] == facReg && isRegTmp(re[1])) {
+                clearRegTmp(re[1]);
+            }
+            value = alloRegTmp();
             emit(ArrL, 4, getArrLabel(name, level), re[1], re[2], value);
             if (symbleList[wp] != RBRACK) {
                 error(lines[wp], MISS_RBRACK);
@@ -600,6 +620,9 @@ void assignSentDef() {
         int *re = expressDef();
         int fromValue = re[1];
         enum factorKind fromKind = re[2];
+        if (fromKind == facReg && isRegTmp(fromValue)) {
+            clearRegTmp(fromValue);
+        }
         emit(Assig, 3, fromValue, fromKind, toReg);
     } else if (symbleList[wp] == LBRACK) {
         printWord();
@@ -617,6 +640,12 @@ void assignSentDef() {
         re = expressDef();
         int fromValue = re[1];
         enum factorKind fromKind = re[2];
+        if (offKind == facReg && isRegTmp(offset)) {
+            clearRegTmp(offset);
+        }
+        if (fromKind == facReg && isRegTmp(fromValue)) {
+            clearRegTmp(fromValue);
+        }
         emit(ArrS, 5, getArrLabel(name, level), offset, offKind, fromValue, fromKind);
     } else panic("assignSentDef");
     printSyntax("<赋值语句>");
@@ -674,38 +703,50 @@ void *conditDef() {
         if (r2[0] != INT) {
             error(lines[wp - 1], CONDIT_ILLEGAL);
         }
-        int reg = newRegister();
-        emit(Tuple, 6, MinuOp, valueA, valueKindA, valueB, valueKindB, reg);
+        if (valueKindA == facReg && isRegTmp(valueA)) {
+            clearRegTmp(valueA);
+        }
+        if (valueKindB == facReg && isRegTmp(valueB)) {
+            clearRegTmp(valueB);
+        }
+        int regC = alloRegTmp();
+        emit(Tuple, 6, MinuOp, valueA, valueKindA, valueB, valueKindB, regC);
         switch (op) {
             //这里都是反的，因为考虑到大部分都是“满足则执行”，而branch逻辑是“满足即跳转”
             case LSS:
-                branchP = emit(Bra, 3, reg, reverse(BLT), NULL);
+                branchP = emit(Bra, 3, regC, reverse(BLT), NULL);
                 break;
             case LEQ:
-                branchP = emit(Bra, 3, reg, reverse(BLE), NULL);
+                branchP = emit(Bra, 3, regC, reverse(BLE), NULL);
                 break;
             case GRE:
-                branchP = emit(Bra, 3, reg, reverse(BGT), NULL);
+                branchP = emit(Bra, 3, regC, reverse(BGT), NULL);
                 break;
             case GEQ:
-                branchP = emit(Bra, 3, reg, reverse(BGE), NULL);
+                branchP = emit(Bra, 3, regC, reverse(BGE), NULL);
                 break;
             case EQL:
-                branchP = emit(Bra, 3, reg, reverse(BEQ), NULL);
+                branchP = emit(Bra, 3, regC, reverse(BEQ), NULL);
                 break;
             case NEQ:
-                branchP = emit(Bra, 3, reg, reverse(BNE), NULL);
+                branchP = emit(Bra, 3, regC, reverse(BNE), NULL);
                 break;
             default:
                 break;
         }
+        if (isRegTmp(regC)) {
+            clearRegTmp(regC);
+        }
     } else {
         if (valueKindA != facReg) {
-            int reg = newRegister();
-            emit(Assig, 3, valueA, valueKindA, reg);
-            valueA = reg;
+            int regC = alloRegTmp();
+            emit(Assig, 3, valueA, valueKindA, regC);
+            valueA = regC;
         }
         branchP = emit(Bra, 3, valueA, BEQ, NULL);
+        if (isRegTmp(valueA)) {
+            clearRegTmp(valueA);
+        }
     }
     printSyntax("<条件>");
     return branchP;
@@ -766,6 +807,9 @@ void loopDef() {
         int *re = expressDef();
         int fromValue = re[1];
         enum factorKind fromKind = re[2];
+        if (fromKind == facReg && isRegTmp(fromValue)) {
+            clearRegTmp(fromValue);
+        }
         emit(Assig, 3, fromValue, fromKind, toReg);//赋值
         if (symbleList[wp] != SEMICN) {
             error(lines[wp - 1], MISS_SEMI);
@@ -795,6 +839,9 @@ void loopDef() {
             error(lines[wp - 1], MISS_RPARENT);
         } else { printWord(); }
         sentDef();
+        if (isRegTmp(regA)) {
+            clearRegTmp(regA);
+        }
         emit(Tuple, 6, minus ? MinuOp : PlusOp, regA, facReg, step, facInt, regC);
         emit(Goto, 1, labelP1->info);//跳转到函数头
         labelP2 = emit(Label, 1, genLabel());//函数尾END
@@ -830,10 +877,11 @@ int retFuncCallDef() {
     if (symbleList[wp] != RPARENT) {
         error(lines[wp - 1], MISS_RPARENT);
     } else { printWord(); }
-    int reg = newRegister();
+    int reg = alloRegTmp();
     emit(Call, 1, getLabel(name)->info);
     emit(RevEnv, 1, isRecursion);
     emit(ReadRet, 1, reg);//todo：有时候不用get return
+    //todo:有返回值函数假如结果没有收录，请删除临时寄存器
     printSyntax("<有返回值函数调用语句>");
     return reg;
 }
@@ -876,6 +924,9 @@ void assignParaDef(char *fname) {
             paraIndex++;
             if ((r = checkParaType(fname, paraIndex, type)) != SUCCESS) {
                 error(lines[wp - 1], r);
+            }
+            if (kind == facReg && isRegTmp(value)) {
+                clearRegTmp(value);
             }
             emit(Push, 2, value, kind);
             if (symbleList[wp] == COMMA) {
@@ -949,6 +1000,9 @@ void writeSentDef() {
             enum Type t = re[0];
             int value = re[1];
             if (re[2] == facReg) {
+                if (isRegTmp(value)) {
+                    clearRegTmp(value);
+                }
                 emit(Write, 4, STR_REG, str, value, t);
             } else {
                 emit(Write, 4, STR_VALUE, str, value, t);
@@ -961,6 +1015,9 @@ void writeSentDef() {
         enum Type t = re[0];
         int value = re[1];
         if (re[2] == facReg) {
+            if (isRegTmp(value)) {
+                clearRegTmp(value);
+            }
             emit(Write, 4, REG_ONLY, NULL, value, t);
         } else {
             emit(Write, 4, VALUE_ONLY, NULL, value, t);
@@ -991,6 +1048,9 @@ void retDef() {
             } else if (ret != retType) {
                 error(lines[wp], MISMATCH_RET);
             }
+        }
+        if (kind == facReg && isRegTmp(value)) {
+            clearRegTmp(value);
         }
         emit(Ret, 2, value, kind);
         if (symbleList[wp] != RPARENT) {

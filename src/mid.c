@@ -130,20 +130,6 @@ struct Code *emit(enum CodeType t, int size, ...) {
     return new;
 }
 
-int newRegister() {
-    if (Register == 0)Register++;//空出t0和t1
-    else if (Register > maxRegister)maxRegister = Register;
-    return ++Register;
-}
-
-void saveRegister() {
-    saveReg = Register;
-}
-
-void revertRegister() {
-    Register = saveReg;
-}
-
 /**
  * 查找符号表，找到变量分配的虚拟寄存器
  */

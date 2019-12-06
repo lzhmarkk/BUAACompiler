@@ -3,9 +3,6 @@
 
 #include "symbleTable.h"
 
-int Register;//空出t0和t1作为中间结果寄存器
-int maxRegister;
-int saveReg;
 struct Code *code;
 
 int loopCount;
@@ -85,7 +82,7 @@ struct Var {
 struct Const {
     enum Type type;
     char *name;//名
-    int reg;//对应寄存器//todo 常量不用寄存器
+    int reg;//对应寄存器
     int value;//值
 };
 struct Tuple {
@@ -149,12 +146,6 @@ struct Code {
 };
 
 struct Code *emit(enum CodeType t, int size, ...);
-
-int newRegister();
-
-void saveRegister();
-
-void revertRegister();
 
 int getReg(char *name, int leve);
 

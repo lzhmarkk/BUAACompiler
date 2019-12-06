@@ -81,8 +81,4 @@ void saveEnv(int isRecursion);
 
 void revertEnv(int isRecursion);
 
-void __inSp();
-
-void __outSp(char *msg);
-
 #endif //WORDANALYZER_C_GENERATE_H
