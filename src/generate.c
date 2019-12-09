@@ -22,9 +22,9 @@ void genMips() {
                 if (!hasEntry) {
                     hasEntry = 1;
                     printMips("jal Main");
-                    printMips("nop");
+                    //printMips("nop");
                     printMips("j END");
-                    printMips("nop");
+                    //printMips("nop");
                 }
                 genFunc(p->info);
                 struct Code *t = p->next;
@@ -168,7 +168,7 @@ void genPush(struct Push *p) {
 void genCall(struct Call *p) {
     if (COMMENT)printMips("#调用函数");
     printMips("jal %s", p->func->name);
-    printMips("nop");
+    //printMips("nop");
 }
 
 /**
@@ -225,7 +225,7 @@ void genRet(struct Ret *p) {
         }
     }
     printMips("jr $ra");
-    printMips("nop");
+    //printMips("nop");
 }
 
 /**
@@ -415,7 +415,7 @@ void genAssig(struct Assig *p) {
 void genGoto(struct Goto *p) {
     if (COMMENT)printMips("#跳转");
     printMips("j %s", p->label->name);
-    printMips("nop");
+    //printMips("nop");
 }
 
 /**
@@ -481,7 +481,7 @@ void genBra(struct Bra *p) {
             break;
         }
     }
-    printMips("nop");
+    //printMips("nop");
 }
 
 /**
