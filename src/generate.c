@@ -8,6 +8,7 @@ struct Code *curCode[ENV_STACK_LENGTH];
 int curCodeSp;
 //函数头指针
 struct Code *fhead;
+int pushCount[ENV_STACK_LENGTH];
 
 void genMips() {
     hasEntry = 0;
@@ -27,12 +28,9 @@ void genMips() {
                 }
                 genFunc(p->info);
                 struct Code *t = p->next;
-                paraCount = 0;
                 while (t != NULL && t->type == Para) {
-                    paraCount++;
                     t = t->next;
                 }
-                ((struct Func *) p->info)->paraSize = paraCount;
                 fhead = p;
                 break;
             }
@@ -98,6 +96,7 @@ void genMips() {
                 break;
             case SavEnv:
                 curCode[curCodeSp] = p;
+                pushCount[curCodeSp] = 0;
                 saveEnv(((struct SavEnv *) p->info)->isRecursion);
                 curCodeSp++;
                 break;
@@ -117,13 +116,6 @@ void genMips() {
 void genFunc(struct Func *p) {
     if (COMMENT)printMips("#函数头");
     printMips("%s:", p->name);
-    /*if (strcmp(p->name, "main") != 0) {
-        //若不是main
-        if (COMMENT)printMips("#保存环境");
-        //printMips("sw $sp,4($sp)");
-        printMips("addi $sp,$sp,-4");
-        printMips("sw $ra,0($sp)");
-    }*/
 }
 
 /**
@@ -134,26 +126,40 @@ void genPush(struct Push *p) {
     if (p->kind == facReg) {
         //如果是寄存器
         if (isRegGlo(p->value)) {
-            //1001
             printMips("lw $v0,%d($gp)", (p->value - GLO) * 4);
-            printMips("addi $sp,$sp,-4");
-            printMips("sw $v0,0($sp)");
+            if (pushCount[curCodeSp - 1] > 3) {
+                printMips("addi $sp,$sp,-4");
+                printMips("sw $v0,0($sp)");
+            } else {
+                printMips("move $%d,$v0", pushCount[curCodeSp - 1] + $a0);
+            }
         } else if (isRegMem(p->value)) {
-            //-2
             printMips("lw $v0,head+%d", -p->value * 4);
+            if (pushCount[curCodeSp - 1] > 3) {
+                printMips("addi $sp,$sp,-4");
+                printMips("sw $v0,0($sp)");
+            } else {
+                printMips("move $%d,$v0", pushCount[curCodeSp - 1] + $a0);
+            }
+        } else {
+            if (pushCount[curCodeSp - 1] > 3) {
+                printMips("addi $sp,$sp,-4");
+                printMips("sw $%d,0($sp)", p->value + $t0);
+            } else {
+                printMips("move $%d,$%d", pushCount[curCodeSp - 1] + $a0, p->value + $t0);
+            }
+        }
+    } else {
+        if (pushCount[curCodeSp - 1] > 3) {
+            printMips("li $v0,%d", p->value);
             printMips("addi $sp,$sp,-4");
             printMips("sw $v0,0($sp)");
         } else {
-            //3
-            printMips("addi $sp,$sp,-4");
-            printMips("sw $%d,0($sp)", p->value + $t0);
+            printMips("li $%d,%d", pushCount[curCodeSp - 1] + $a0, p->value);
         }
-    } else {
-        //如果是值
-        printMips("li $v0,%d", p->value);
-        printMips("addi $sp,$sp,-4");
-        printMips("sw $v0,0($sp)");
     }
+
+    pushCount[curCodeSp - 1]++;
 }
 
 /**
@@ -170,17 +176,20 @@ void genCall(struct Call *p) {
  */
 void genPara(struct Para *p, int index) {
     if (COMMENT)printMips("#参数%d出栈", index);
-    if (isRegGlo(p->reg)) {
+    int fromReg;
+    if (index - 1 > 3) {
         printMips("lw $v0,0($sp)");
         printMips("addi $sp,$sp,4");
-        printMips("sw $v0,%d($sp)", (p->reg - GLO) * 4);
-    } else if (isRegMem(p->reg)) {
-        printMips("lw $v0,0($sp)");
-        printMips("addi $sp,$sp,4");
-        printMips("sw $v0,head+%d", -p->reg * 4);
+        fromReg = $v0;
     } else {
-        printMips("lw $%d,0($sp)", p->reg + $t0);
-        printMips("addi $sp,$sp,4");
+        fromReg = $a0 + index - 1;
+    }
+    if (isRegGlo(p->reg)) {
+        printMips("sw $%d,%d($sp)", fromReg, (p->reg - GLO) * 4);
+    } else if (isRegMem(p->reg)) {
+        printMips("sw $%d,head+%d", fromReg, -p->reg * 4);
+    } else {
+        printMips("move $%d,$%d", p->reg + $t0, fromReg);
     }
 }
 
@@ -217,7 +226,6 @@ void genRet(struct Ret *p) {
     }
     printMips("jr $ra");
     printMips("nop");
-    paraCount = 0;
 }
 
 /**
@@ -699,6 +707,14 @@ void saveEnv(int isRecursion) {
 
     //保存中间变量寄存器和局部变量寄存器
     int t;
+    if (curCodeSp >= 1) {
+        //说明存在参数是函数的情况
+        for (t = 0; t < ((pushCount[curCodeSp - 1] > 4) ? 4 : pushCount[curCodeSp - 1]); t++) {
+            //需要保存已经父函数写入的参数，保存$a
+            printMips("addi $sp,$sp,-4 #Save $a reg");
+            printMips("sw $%d,0($sp)", t + $a0);
+        }
+    }
     for (t = 0; t < MIDREG; t++) {
         printMips("addi $sp,$sp,-4 #Save reg");
         printMips("sw $%d,0($sp)", t + $t0);
@@ -785,8 +801,14 @@ void revertEnv(int isRecursion) {
         printMips("lw $%d,0($sp) #Revert reg", t + $t0);
         printMips("addi $sp,$sp,4");
     }
+    if (curCodeSp >= 1) {
+        for (t = (pushCount[curCodeSp - 1] > 4) ? 3 : pushCount[curCodeSp - 1] - 1; t >= 0; t--) {
+            //恢复a寄存器
+            printMips("lw $%d,0($sp) #Revert $a reg", t + $a0);
+            printMips("addi $sp,$sp,4");
+        }
+    }
 }
 //todo 赋值优化
-//todo 参数优化
 //todo 环境保存优化
 //todo sp统一减
