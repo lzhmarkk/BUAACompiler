@@ -706,6 +706,7 @@ char *getStrLab(char *str) {
 void saveEnv(int isRecursion, int regListSize) {
     struct Code *c;
     printMips("#保存环境");
+    int offset = 1;
 
     //保存中间变量寄存器和局部变量寄存器
     int t;
@@ -713,23 +714,20 @@ void saveEnv(int isRecursion, int regListSize) {
         //说明存在参数是函数的情况
         for (t = 0; t < ((pushCount[curCodeSp - 1] > 4) ? 4 : pushCount[curCodeSp - 1]); t++) {
             //需要保存已经父函数写入的参数，保存$a
-            printMips("addi $sp,$sp,-4 #Save $a reg");
-            printMips("sw $%d,0($sp)", t + $a0);
+            printMips("sw $%d,%d($sp) #Save $a reg", t + $a0, -4 * offset++);
         }
     }
     for (t = 0; t < MIDREG; t++) {
-        printMips("addi $sp,$sp,-4 #Save midReg");
-        printMips("sw $%d,0($sp)", t + $t0);
+        printMips("sw $%d,%d($sp) #Save midReg", t + $t0, -4 * offset++);
     }
     for (t = 0; t < regListSize; t++) {
-        printMips("addi $sp,$sp,-4 #Save reg");
         if (t + $t0 + MIDREG > $t9) {
             //[13,+]
-            printMips("lw $v1,head+%d", (t + MIDREG + $t0 - $t9) * 4);
-            printMips("sw $v1,0($sp)");
+            printMips("lw $v1,head+%d #Save reg", (t + MIDREG + $t0 - $t9) * 4);
+            printMips("sw $v1,%d($sp)", -4 * offset++);
         } else {
             //[0,12]
-            printMips("sw $%d,0($sp)", t + $t0 + MIDREG);
+            printMips("sw $%d,%d($sp) #Save reg", t + $t0 + MIDREG, -4 * offset++);
         }
     }
     if (isRecursion) {
@@ -741,15 +739,14 @@ void saveEnv(int isRecursion, int regListSize) {
                     int r;
                     for (r = 0; r < v->size; r++) {
                         printMips("lw $v1,%s+%d #Save %s[%d]", v->name, r * 4, v->name, r);
-                        printMips("addi $sp,$sp,-4");
-                        printMips("sw $v1,0($sp)");
+                        printMips("sw $v1,%d($sp)", -4 * offset++);
                     }
                 }
             }
         }
     }
-    printMips("addi $sp,$sp,-4 #Save $ra");
-    printMips("sw $ra,0($sp)");
+    printMips("sw $ra,%d($sp) #Save $ra", -4 * offset++);
+    printMips("addi $sp,$sp,%d", -4 * (offset - 1));
 }
 
 /**
@@ -758,8 +755,9 @@ void saveEnv(int isRecursion, int regListSize) {
 void revertEnv(int isRecursion, int regListSize) {
     struct Code *c;
     printMips("#恢复环境");
-    printMips("lw $ra,0($sp) #Revert $ra");
-    printMips("addi $sp,$sp,4");
+    int offset = 0;
+
+    printMips("lw $ra,%d($sp) #Revert $ra", 4 * offset++);
     if (isRecursion) {
         for (c = curCode[curCodeSp]; c != fhead; c = c->prev) {
             if (c->type == Var) {
@@ -768,8 +766,7 @@ void revertEnv(int isRecursion, int regListSize) {
                     //数组变量
                     int t;
                     for (t = v->size - 1; t >= 0; t--) {
-                        printMips("lw $v1,0($sp) #Revert %s[%d]", v->name, t * 4);
-                        printMips("addi $sp,$sp,4");
+                        printMips("lw $v1,%d($sp) #Revert %s[%d]", v->name, t * 4, 4 * offset++);
                         printMips("sw $v1,%s+%d", v->name, t * 4);
                     }
                 }
@@ -779,27 +776,23 @@ void revertEnv(int isRecursion, int regListSize) {
     int t;
     for (t = regListSize - 1; t >= 0; t--) {
         if (t + $t0 + MIDREG > $t9) {
-            printMips("lw $v1,0($sp) #Revert reg");
+            printMips("lw $v1,%d($sp) #Revert reg", 4 * offset++);
             printMips("sw $v1,head+%d", (t + MIDREG + $t0 - $t9) * 4);
         } else {
-            printMips("lw $%d,0($sp) #Revert reg", t + $t0 + MIDREG);
+            printMips("lw $%d,%d($sp) #Revert reg", t + $t0 + MIDREG, 4 * offset++);
         }
-        printMips("addi $sp,$sp,4");
     }
     //恢复中间变量寄存器
     for (t = MIDREG - 1; t >= 0; t--) {
-        printMips("lw $%d,0($sp) #Revert midReg", t + $t0);
-        printMips("addi $sp,$sp,4");
+        printMips("lw $%d,%d($sp) #Revert midReg", t + $t0, 4 * offset++);
     }
     if (curCodeSp >= 1) {
         for (t = (pushCount[curCodeSp - 1] > 4) ? 3 : pushCount[curCodeSp - 1] - 1; t >= 0; t--) {
             //恢复a寄存器
-            printMips("lw $%d,0($sp) #Revert $a reg", t + $a0);
-            printMips("addi $sp,$sp,4");
+            printMips("lw $%d,%d($sp) #Revert $a reg", t + $a0, 4 * offset++);
         }
     }
+    printMips("addi $sp,$sp,%d", 4 * offset);
 }
 //todo 赋值优化
-//todo 环境保存优化
-//todo sp统一减
 //todo 额外变量、数组进栈
