@@ -134,9 +134,11 @@ struct Write {
 };
 struct SavEnv {
     int isRecursion;//是否为递归前的环境保存;如果是,则要保存局部数组
+    int regListSize;
 };
 struct RevEnv {
     int isRecursion;//是否为递归后的环境恢复
+    int regListSize;
 };
 struct Code {
     enum CodeType type;

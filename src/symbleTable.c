@@ -265,8 +265,9 @@ void printTable() {
                 break;
         }
         if (p->kind == FUNC && p->type == VOID) {
+            enum Type ret = ((struct FuncTable *) p->info)->ret;
             printf("%10s %5s %5s   %2d      --return(%s)\n", p->name, kind, type, p->level,
-                   ((struct FuncTable *) p->info)->ret == INT ? "INT" : "CHAR");
+                   (ret == INT ? "INT" : ret == CHAR ? "CHAR" : "VOID"));
         } else if (p->kind == VAR && p->type == ARRAY) {
             struct ArrayTable *t = (struct ArrayTable *) p->info;
             printf("%10s %5s %5s   %2d      --(%s) %s:\n", p->name, kind, type, p->level,
@@ -276,9 +277,9 @@ void printTable() {
                    ((struct ConstTable *) p->info)->value);
         } else {
             if (p->reg < 0) {
-                printf("%10s %5s %5s   %2d  $t%d(Mem)\n", p->name, kind, type, p->level, -p->reg);
+                printf("%10s %5s %5s   %2d  $t%d\n", p->name, kind, type, p->level, p->reg);
             } else if (p->reg >= GLO) {
-                printf("%10s %5s %5s   %2d  $t%d(Glo)\n", p->name, kind, type, p->level, p->reg - GLO);
+                printf("%10s %5s %5s   %2d  $t%d(Glo)\n", p->name, kind, type, p->level, p->reg);
             } else {
                 printf("%10s %5s %5s   %2d  $t%d\n", p->name, kind, type, p->level, p->reg);
             }
@@ -317,4 +318,36 @@ char *getArrLabel(char *name, int leve) {
         }
     }
     return NULL;
+}
+
+int getCommonReg(char *func1, char *func2) {
+    int func1Size = 0, func2Size = 0;
+    struct Table *p;
+    for (p = table; p != NULL; p = p->next) {
+        if (p->kind == FUNC && p->type == VOID && !strcmp(func1, p->name)) {
+            //找到函数1
+            p = p->next;
+            while (p != NULL && p->kind != FUNC) {
+                if (p->kind == PARA || p->kind == VAR) {
+                    func1Size++;
+                }
+                p = p->next;
+            }
+            break;
+        }
+    }
+    for (p = table; p != NULL; p = p->next) {
+        if (p->kind == FUNC && p->type == VOID && !strcmp(func2, p->name)) {
+            //找到函数2
+            p = p->next;
+            while (p != NULL && p->kind != FUNC) {
+                if (p->kind == PARA || p->kind == VAR) {
+                    func2Size++;
+                }
+                p = p->next;
+            }
+            break;
+        }
+    }
+    return func1Size < func2Size ? func1Size : func2Size;
 }

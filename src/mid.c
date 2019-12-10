@@ -2,6 +2,7 @@
 #include "string.h"
 #include "stdarg.h"
 #include "stdlib.h"
+#include "reg.h"
 
 struct Code *emit(enum CodeType t, int size, ...) {
     struct Code *new = (struct Code *) malloc(sizeof(struct Code));
@@ -108,13 +109,19 @@ struct Code *emit(enum CodeType t, int size, ...) {
         p->value = va_arg(vl, int);
         p->type = va_arg(vl, enum Type);
         new->info = p;
-    } else if (t == SavEnv && size == 1) {
+    } else if (t == SavEnv && size == 2) {
         struct SavEnv *s = (struct SavEnv *) malloc(sizeof(struct SavEnv));
-        s->isRecursion = va_arg(vl, int);
+        char *curFunc = va_arg(vl, char*);
+        char *name = va_arg(vl, char*);
+        s->isRecursion = curFunc ? !strcmp(name, curFunc) : 0;
+        s->regListSize = getCommonReg(curFunc, name);
         new->info = s;
-    } else if (t == RevEnv && size == 1) {
+    } else if (t == RevEnv && size == 2) {
         struct RevEnv *r = (struct RevEnv *) malloc(sizeof(struct RevEnv));
-        r->isRecursion = va_arg(vl, int);
+        char *curFunc = va_arg(vl, char*);
+        char *name = va_arg(vl, char*);
+        r->isRecursion = curFunc ? !strcmp(name, curFunc) : 0;
+        r->regListSize = getCommonReg(curFunc, name);
         new->info = r;
     }
 
@@ -394,14 +401,35 @@ void printCode() {
                 }
                 break;
             }
-            case SavEnv:
-                printf("Save Env(%1d)\n", ((struct SavEnv *) (p->info))->isRecursion);
+            case SavEnv: {
+                struct SavEnv *se = p->info;
+                printf("Save Env(%1d){", se->isRecursion);
+                int t;
+                for (t = 0; t < se->regListSize; t++) {
+                    if (t + $t0 + MIDREG > $t9) {
+                        printf("%d,", -(t + MIDREG + $t0 - $t9));
+                    } else {
+                        printf("$%d,", t + $t0 + MIDREG);
+                    }
+                }
+                printf("}\n");
                 break;
-            case RevEnv:
-                printf("Revert Env(%1d)\n", ((struct RevEnv *) (p->info))->isRecursion);
+            }
+            case RevEnv: {
+                struct RevEnv *re = p->info;
+                printf("Revert Env(%1d){", re->isRecursion);
+                int t;
+                for (t = re->regListSize - 1; t >= 0; t--) {
+                    if (t + $t0 + MIDREG > $t9) {
+                        printf("%d,", -(t + MIDREG + $t0 - $t9));
+                    } else {
+                        printf("$%d,", t + $t0 + MIDREG);
+                    }
+                }
+                printf("}\n");
                 break;
+            }
         }
     }
 
 }
-

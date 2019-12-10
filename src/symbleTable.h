@@ -79,6 +79,8 @@ char *genArrLabel();
 
 char *getArrLabel(char *name, int leve);
 
+int getCommonReg(char *func1, char *func2);
+
 struct Table *table;
 
 #endif //WORDANALYZER_C_SYMBLETABLE_H

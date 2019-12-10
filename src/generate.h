@@ -99,8 +99,8 @@ void initData();
 
 char *getStrLab(char *str);
 
-void saveEnv(int isRecursion);
+void saveEnv(int isRecursion, int regListSize);
 
-void revertEnv(int isRecursion);
+void revertEnv(int isRecursion, int regListSize);
 
 #endif //WORDANALYZER_C_GENERATE_H

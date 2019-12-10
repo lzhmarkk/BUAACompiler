@@ -97,12 +97,14 @@ void genMips() {
             case SavEnv:
                 curCode[curCodeSp] = p;
                 pushCount[curCodeSp] = 0;
-                saveEnv(((struct SavEnv *) p->info)->isRecursion);
+                struct SavEnv *se = p->info;
+                saveEnv(se->isRecursion, se->regListSize);
                 curCodeSp++;
                 break;
             case RevEnv:
                 curCodeSp--;
-                revertEnv(((struct RevEnv *) p->info)->isRecursion);
+                struct RevEnv *re = p->info;
+                revertEnv(re->isRecursion, re->regListSize);
                 break;
         }
     }
@@ -701,7 +703,7 @@ char *getStrLab(char *str) {
 /**
  * 保存局部变量(运行环境)
  */
-void saveEnv(int isRecursion) {
+void saveEnv(int isRecursion, int regListSize) {
     struct Code *c;
     printMips("#保存环境");
 
@@ -716,37 +718,32 @@ void saveEnv(int isRecursion) {
         }
     }
     for (t = 0; t < MIDREG; t++) {
-        printMips("addi $sp,$sp,-4 #Save reg");
+        printMips("addi $sp,$sp,-4 #Save midReg");
         printMips("sw $%d,0($sp)", t + $t0);
     }
-    for (c = fhead->next; c != curCode[curCodeSp]; c = c->next) {
-        if (c->type == Para) {
-            struct Para *pa = c->info;
-            printMips("addi $sp,$sp,-4 #Save Para");
-            if (isRegMem(pa->reg)) {
-                printMips("lw $v1,head+%d", -pa->reg * 4);
-                printMips("sw $v1,0($sp)");
-            } else {
-                printMips("sw $%d,0($sp)", pa->reg + $t0);
-            }
-        } else if (c->type == Var) {
-            struct Var *v = c->info;
-            if (v->size == 0) {
-                //普通变量
-                printMips("addi $sp,$sp,-4 #Save Var");
-                if (isRegMem(v->reg)) {
-                    printMips("lw $v1,head+%d", -v->reg * 4);
-                    printMips("sw $v1,0($sp)");
-                } else {
-                    printMips("sw $%d,0($sp)", v->reg + $t0);
-                }
-            } else if (isRecursion) {
-                //数组变量
-                int r;
-                for (r = 0; r < v->size; r++) {
-                    printMips("lw $v1,%s+%d #Save %s[%d]", v->name, r * 4, v->name, r);
-                    printMips("addi $sp,$sp,-4");
-                    printMips("sw $v1,0($sp)");
+    for (t = 0; t < regListSize; t++) {
+        printMips("addi $sp,$sp,-4 #Save reg");
+        if (t + $t0 + MIDREG > $t9) {
+            //[13,+]
+            printMips("lw $v1,head+%d", (t + MIDREG + $t0 - $t9) * 4);
+            printMips("sw $v1,0($sp)");
+        } else {
+            //[0,12]
+            printMips("sw $%d,0($sp)", t + $t0 + MIDREG);
+        }
+    }
+    if (isRecursion) {
+        for (c = fhead->next; c != curCode[curCodeSp]; c = c->next) {
+            if (c->type == Var) {
+                struct Var *v = c->info;
+                if (v->size != 0) {
+                    //数组变量
+                    int r;
+                    for (r = 0; r < v->size; r++) {
+                        printMips("lw $v1,%s+%d #Save %s[%d]", v->name, r * 4, v->name, r);
+                        printMips("addi $sp,$sp,-4");
+                        printMips("sw $v1,0($sp)");
+                    }
                 }
             }
         }
@@ -758,47 +755,40 @@ void saveEnv(int isRecursion) {
 /**
  * 恢复局部变量(运行环境)
  */
-void revertEnv(int isRecursion) {
+void revertEnv(int isRecursion, int regListSize) {
     struct Code *c;
     printMips("#恢复环境");
     printMips("lw $ra,0($sp) #Revert $ra");
     printMips("addi $sp,$sp,4");
-    for (c = curCode[curCodeSp]; c != fhead; c = c->prev) {
-        if (c->type == Para) {
-            struct Para *pa = c->info;
-            if (isRegMem(pa->reg)) {
-                printMips("lw $v1,0($sp) #Revert Para");
-                printMips("sw $v1,head+%d", -pa->reg * 4);
-            } else {
-                printMips("lw $%d,0($sp) #Revert Para", pa->reg + $t0);
-            }
-            printMips("addi $sp,$sp,4");
-        } else if (c->type == Var) {
-            struct Var *v = c->info;
-            if (v->size == 0) {
-                //普通变量
-                if (isRegMem(v->reg)) {
-                    printMips("lw $v1,0($sp) #Revert Var");
-                    printMips("sw $v1,head+%d", -v->reg * 4);
-                } else {
-                    printMips("lw $%d,0($sp) #Revert Var", v->reg + $t0);
-                }
-                printMips("addi $sp,$sp,4");
-            } else if (isRecursion) {
-                //数组变量
-                int t;
-                for (t = v->size - 1; t >= 0; t--) {
-                    printMips("lw $v1,0($sp) #Revert %s[%d]", v->name, t * 4);
-                    printMips("addi $sp,$sp,4");
-                    printMips("sw $v1,%s+%d", v->name, t * 4);
+    if (isRecursion) {
+        for (c = curCode[curCodeSp]; c != fhead; c = c->prev) {
+            if (c->type == Var) {
+                struct Var *v = c->info;
+                if (v->size != 0) {
+                    //数组变量
+                    int t;
+                    for (t = v->size - 1; t >= 0; t--) {
+                        printMips("lw $v1,0($sp) #Revert %s[%d]", v->name, t * 4);
+                        printMips("addi $sp,$sp,4");
+                        printMips("sw $v1,%s+%d", v->name, t * 4);
+                    }
                 }
             }
         }
     }
     int t;
+    for (t = regListSize - 1; t >= 0; t--) {
+        if (t + $t0 + MIDREG > $t9) {
+            printMips("lw $v1,0($sp) #Revert reg");
+            printMips("sw $v1,head+%d", (t + MIDREG + $t0 - $t9) * 4);
+        } else {
+            printMips("lw $%d,0($sp) #Revert reg", t + $t0 + MIDREG);
+        }
+        printMips("addi $sp,$sp,4");
+    }
     //恢复中间变量寄存器
     for (t = MIDREG - 1; t >= 0; t--) {
-        printMips("lw $%d,0($sp) #Revert reg", t + $t0);
+        printMips("lw $%d,0($sp) #Revert midReg", t + $t0);
         printMips("addi $sp,$sp,4");
     }
     if (curCodeSp >= 1) {
@@ -812,3 +802,4 @@ void revertEnv(int isRecursion) {
 //todo 赋值优化
 //todo 环境保存优化
 //todo sp统一减
+//todo 额外变量、数组进栈

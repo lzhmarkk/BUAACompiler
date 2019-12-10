@@ -346,7 +346,9 @@ void paraDef() {
  * 主函数
  */
 void mainDef() {
+    addToTable("Main", FUNC, VOID, 0, 2, 0, VOID);
     emit(Func, 1, "Main");
+    curFunc = "Main";
 
     retType = VOID;
     checkRet = 1;
@@ -871,15 +873,14 @@ int retFuncCallDef() {
     }
     assert(symbleList[wp], LPARENT);
     printWord();
-    int isRecursion = curFunc ? !strcmp(name, curFunc) : 0;
-    emit(SavEnv, 1, isRecursion);
+    emit(SavEnv, 2, curFunc, name);
     assignParaDef(tokenList[wp - 2]);
     if (symbleList[wp] != RPARENT) {
         error(lines[wp - 1], MISS_RPARENT);
     } else { printWord(); }
     int reg = alloRegTmp();
     emit(Call, 1, getLabel(name)->info);
-    emit(RevEnv, 1, isRecursion);
+    emit(RevEnv, 2, curFunc, name);
     emit(ReadRet, 1, reg);//todo：有时候不用get return
     //todo:有返回值函数假如结果没有收录，请删除临时寄存器
     printSyntax("<有返回值函数调用语句>");
@@ -898,14 +899,13 @@ void unRetFuncCallDef() {
     }
     assert(symbleList[wp], LPARENT);
     printWord();
-    int isRecursion = curFunc ? !strcmp(name, curFunc) : 0;
-    emit(SavEnv, 1, isRecursion);
+    emit(SavEnv, 2, curFunc, name);
     assignParaDef(tokenList[wp - 2]);
     if (symbleList[wp] != RPARENT) {
         error(lines[wp - 1], MISS_RPARENT);
     } else { printWord(); }
     emit(Call, 1, getLabel(name)->info);
-    emit(RevEnv, 1, isRecursion);
+    emit(RevEnv, 2, curFunc, name);
     printSyntax("<无返回值函数调用语句>");
 }
 
