@@ -10,9 +10,10 @@ int curCodeSp;
 struct Code *fhead;
 int pushCount[ENV_STACK_LENGTH];
 
+int delta;
+
 void genMips() {
     hasEntry = 0;
-    arrayCount = 0;
     printMips(".text");
     printMips("la $gp,glob");
     struct Code *p;
@@ -32,6 +33,8 @@ void genMips() {
                     t = t->next;
                 }
                 fhead = p;
+                delta = 0;
+                arrListSize = 0;
                 break;
             }
             case Push:
@@ -106,6 +109,9 @@ void genMips() {
                 struct RevEnv *re = p->info;
                 revertEnv(re->isRecursion, re->regListSize);
                 break;
+            case AlloSpa:
+                allocateSpace(p->info);
+                break;
         }
     }
     end();
@@ -136,7 +142,7 @@ void genPush(struct Push *p) {
                 printMips("move $%d,$v0", pushCount[curCodeSp - 1] + $a0);
             }
         } else if (isRegMem(p->value)) {
-            printMips("lw $v0,head+%d", -p->value * 4);
+            printMips("lw $v0,%d($fp)", p->value * 4);
             if (pushCount[curCodeSp - 1] > 3) {
                 printMips("addi $sp,$sp,-4");
                 printMips("sw $v0,0($sp)");
@@ -187,12 +193,13 @@ void genPara(struct Para *p, int index) {
         fromReg = $a0 + index - 1;
     }
     if (isRegGlo(p->reg)) {
-        printMips("sw $%d,%d($sp)", fromReg, (p->reg - GLO) * 4);
+        printMips("sw $%d,%d($gp)", fromReg, (p->reg - GLO) * 4);
     } else if (isRegMem(p->reg)) {
-        printMips("sw $%d,head+%d", fromReg, -p->reg * 4);
+        delta++;
+        printMips("sw $%d,%d($fp)", fromReg, p->reg * 4);
     } else {
         printMips("move $%d,$%d", p->reg + $t0, fromReg);
-    }
+    }//todo 可优化：统一减sp
 }
 
 /**
@@ -221,11 +228,12 @@ void genRet(struct Ret *p) {
         if (isRegGlo(p->value)) {
             printMips("lw $v0,%d($gp)", (p->value - GLO) * 4);
         } else if (isRegMem(p->value)) {
-            printMips("lw $v0,head+%d", -p->value * 4);
+            printMips("lw $v0,%d($fp)", p->value * 4);
         } else {
             printMips("move $v0,$%d", p->value + $t0);
         }
     }
+    printMips("addi $sp,$sp,%d #释放运行栈", delta * 4);
     printMips("jr $ra");
     //printMips("nop");
 }
@@ -234,11 +242,20 @@ void genRet(struct Ret *p) {
  * 生成变量定义（主要是分配数组空间）
  */
 void genVar(struct Var *p) {
-    if (p->size != 0 && p->reg == 0) {
+    if (p->size != 0) {
         //说明是一个数组
-        strcpy(arrLabList[arrayCount], p->name);
-        arrSizeList[arrayCount] = p->size;
-        arrayCount++;
+        if (isRegMem(p->reg)) {
+            //额外寄存器中的数组
+            delta++;
+        }
+        arrList[arrListSize].size = p->size;
+        arrList[arrListSize].reg = p->reg;
+        arrListSize++;
+    } else {
+        //普通变量
+        if (isRegMem(p->reg)) {
+            delta++;
+        }
     }
 }
 
@@ -274,7 +291,7 @@ void genTuple(struct Tuple *p) {
             printMips("lw $v0,%d($gp)", (p->valueA - GLO) * 4);
             regA = $v0;
         } else if (isRegMem(p->valueA)) {
-            printMips("lw $v0,head+%d", -p->valueA * 4);
+            printMips("lw $v0,%d($fp)", p->valueA * 4);
             regA = $v0;
         } else {
             regA = p->valueA + $t0;
@@ -293,7 +310,7 @@ void genTuple(struct Tuple *p) {
                     printMips("lw $v1,%d($gp)", (p->valueB - GLO) * 4);
                     regB = $v1;
                 } else if (isRegMem(p->valueB)) {
-                    printMips("lw $v1,head+%d", -p->valueB * 4);
+                    printMips("lw $v1,%d($fp)", p->valueB * 4);
                     regB = $v1;
                 } else {
                     regB = p->valueB + $t0;
@@ -312,7 +329,7 @@ void genTuple(struct Tuple *p) {
                     printMips("lw $v1,%d($gp)", (p->valueB - GLO) * 4);
                     regB = $v1;
                 } else if (isRegMem(p->valueB)) {
-                    printMips("lw $v1,head+%d", -p->valueB * 4);
+                    printMips("lw $v1,%d($fp)", p->valueB * 4);
                     regB = $v1;
                 } else {
                     regB = p->valueB + $t0;
@@ -330,7 +347,7 @@ void genTuple(struct Tuple *p) {
                     printMips("lw $v1,%d($gp)", (p->valueB - GLO) * 4);
                     regB = $v1;
                 } else if (isRegMem(p->valueB)) {
-                    printMips("lw $v1,head+%d", -p->valueB * 4);
+                    printMips("lw $v1,%d($fp)", p->valueB * 4);
                     regB = $v1;
                 } else {
                     regB = p->valueB + $t0;
@@ -351,7 +368,7 @@ void genTuple(struct Tuple *p) {
                     printMips("lw $v1,%d($gp)", (p->valueB - GLO) * 4);
                     regB = $v1;
                 } else if (isRegMem(p->valueB)) {
-                    printMips("lw $v1,head+%d", -p->valueB * 4);
+                    printMips("lw $v1,%d($fp)", p->valueB * 4);
                     regB = $v1;
                 } else {
                     regB = p->valueB + $t0;
@@ -369,7 +386,7 @@ void genTuple(struct Tuple *p) {
     if (isRegGlo(p->regC)) {
         printMips("sw $%d,%d($gp)", regC, (p->regC - GLO) * 4);
     } else if (isRegMem(p->regC)) {
-        printMips("sw $%d,head+%d", regC, -p->regC * 4);
+        printMips("sw $%d,%d($fp)", regC, p->regC * 4);
     }
     //这种情况下，已经写入了regC中
 }
@@ -385,7 +402,7 @@ void genAssig(struct Assig *p) {
             printMips("lw $v0,%d($gp)", (p->fromValue - GLO) * 4);
             regFrom = $v0;
         } else if (isRegMem(p->fromValue)) {
-            printMips("lw $v0,head+%d", -p->fromValue * 4);
+            printMips("lw $v0,%d($fp)", p->fromValue * 4);
             regFrom = $v0;
         } else {
             regFrom = p->fromValue + $t0;
@@ -394,7 +411,7 @@ void genAssig(struct Assig *p) {
         if (isRegGlo(p->to)) {
             printMips("sw $%d,%d($gp)", regFrom, (p->to - GLO) * 4);
         } else if (isRegMem(p->to)) {
-            printMips("sw $%d,head+%d", regFrom, -p->to * 4);
+            printMips("sw $%d,%d($fp)", regFrom, p->to * 4);
         } else {
             printMips("move $%d,$%d", p->to + $t0, regFrom);
         }
@@ -404,7 +421,7 @@ void genAssig(struct Assig *p) {
             printMips("sw $v0,%d($gp)", (p->to - GLO) * 4);
         } else if (isRegMem(p->to)) {
             printMips("li $v0,%d", p->fromValue);
-            printMips("sw $v0,head+%d", -p->to * 4);
+            printMips("sw $v0,%d($fp)", p->to * 4);
         } else {
             printMips("li $%d,%d", p->to + $t0, p->fromValue);
         }
@@ -430,7 +447,7 @@ void genBra(struct Bra *p) {
         printMips("lw $v0,%d($gp)", (p->reg - GLO) * 4);
         inV0 = 1;
     } else if (isRegMem(p->reg)) {
-        printMips("lw $v0,head+%d", -p->reg * 4);
+        printMips("lw $v0,%d($fp)", p->reg * 4);
         inV0 = 1;
     }
     switch (p->type) {
@@ -504,31 +521,51 @@ void genArrL(struct ArrL *p) {
             printMips("lw $v0,%d($gp)", (p->offsetValue - GLO) * 4);
             printMips("sll $v0,$v0,2");
         } else if (isRegMem(p->offsetValue)) {
-            printMips("lw $v0,head+%d", -p->offsetValue * 4);
+            printMips("lw $v0,%d($fp)", p->offsetValue * 4);
             printMips("sll $v0,$v0,2");
         } else {
             printMips("sll $v0,$%d,2", p->offsetValue + $t0);
         }
+        //以上将偏移读到$v0
+        if (isRegGlo(p->head)) {
+            printMips("lw $v1,%d($gp)", (p->head - GLO) * 4);
+            printMips("add $v0,$v0,$v1");
+            printMips("lw $v0,0($v0)");
+        } else if (isRegMem(p->head)) {
+            printMips("lw $v1,%d($fp)", p->head * 4);
+            printMips("add $v0,$v0,$v1");
+            printMips("lw $v0,0($v0)");
+        } else {
+            printMips("add $v0,$v0,$%d", p->head + $t0);
+            printMips("lw $v0,0($v0)");
+        }
+        //以上将结果读到$v0
         if (isRegGlo(p->to)) {
-            printMips("lw $v0,%s($v0)", p->label);
             printMips("sw $v0,%d($gp)", (p->to - GLO) * 4);
         } else if (isRegMem(p->to)) {
-            printMips("lw $v0,%s($v0)", p->label);
-            printMips("sw $v0,head+%d", -p->to * 4);
+            printMips("sw $v0,%d($fp)", p->to * 4);
         } else {
-            printMips("lw $%d,%s($v0)", p->to + $t0, p->label);
-        }
+            printMips("move $%d,$v0", p->to + $t0);
+        }//todo 略可优化
     } else {
         //偏移是值
+        if (isRegGlo(p->head)) {
+            printMips("lw $v1,%d($gp)", (p->head - GLO) * 4);
+            printMips("lw $v0,%d($v1)", p->offsetValue * 4);
+        } else if (isRegMem(p->head)) {
+            printMips("lw $v1,%d($fp)", p->head * 4);
+            printMips("lw $v0,%d($v1)", p->offsetValue * 4);
+        } else {
+            printMips("lw $v0,%d($%d)", p->offsetValue * 4, p->head + $t0);
+        }
+        //以上将结果读到$v0
         if (isRegGlo(p->to)) {
-            printMips("lw $v0,%s+%d", p->label, p->offsetValue * 4);
             printMips("sw $v0,%d($gp)", (p->to - GLO) * 4);
         } else if (isRegMem(p->to)) {
-            printMips("lw $v0,%s+%d", p->label, p->offsetValue * 4);
-            printMips("sw $v0,head+%d", -p->to * 4);
+            printMips("sw $v0,%d($fp)", p->to * 4);
         } else {
-            printMips("lw $%d,%s+%d", p->to + $t0, p->label, p->offsetValue * 4);
-        }
+            printMips("move $%d,$v0", p->to + $t0);
+        }//todo 略可优化
     }
 }
 
@@ -538,34 +575,70 @@ void genArrL(struct ArrL *p) {
 void genArrS(struct ArrS *p) {
     int regFrom;
     if (COMMENT)printMips("#写数组");
-    if (p->fromKind == facReg) {
-        if (isRegGlo(p->fromValue)) {
-            printMips("lw $v1,%d($gp)", (p->fromValue - GLO) * 4);
-            regFrom = $v1;
-        } else if (isRegMem(p->fromValue)) {
-            printMips("lw $v1,head+%d", -p->fromValue * 4);
-            regFrom = $v1;
-        } else {
-            regFrom = p->fromValue + $t0;
-        }
-    } else {
-        printMips("li $v1,%d", p->fromValue);
-        regFrom = $v1;
-    }
-    //以上将结果写入regFrom
     if (p->offKind == facReg) {
+        //偏移是寄存器
         if (isRegGlo(p->offsetValue)) {
             printMips("lw $v0,%d($gp)", (p->offsetValue - GLO) * 4);
             printMips("sll $v0,$v0,2");
         } else if (isRegMem(p->offsetValue)) {
-            printMips("lw $v0,head+%d", -p->offsetValue * 4);
+            printMips("lw $v0,%d($fp)", p->offsetValue * 4);
             printMips("sll $v0,$v0,2");
         } else {
             printMips("sll $v0,$%d,2", p->offsetValue + $t0);
         }
-        printMips("sw $%d,%s($v0)", regFrom, p->label);
+        //以上将偏移读到$v0
+        if (isRegGlo(p->head)) {
+            printMips("lw $v1,%d($gp)", (p->head - GLO) * 4);
+            printMips("add $v0,$v0,$v1");
+        } else if (isRegMem(p->head)) {
+            printMips("lw $v1,%d($fp)", p->head * 4);
+            printMips("add $v0,$v0,$v1");
+        } else {
+            printMips("add $v0,$v0,$%d", p->head + $t0);
+        }
+        //以上将地址读到$v0
+        if (p->fromKind == facReg) {
+            if (isRegGlo(p->fromValue)) {
+                printMips("lw $v1,%d($gp)", (p->fromValue - GLO) * 4);
+                regFrom = $v1;
+            } else if (isRegMem(p->fromValue)) {
+                printMips("lw $v1,%d($fp)", p->fromValue * 4);
+                regFrom = $v1;
+            } else {
+                regFrom = p->fromValue + $t0;
+            }
+        } else {
+            printMips("li $v1,%d", p->fromValue);
+            regFrom = $v1;
+        }
+        //以上将结果写入regFrom
+        printMips("sw $%d,0($v0)", regFrom);
     } else {
-        printMips("sw $%d,%s+%d", regFrom, p->label, p->offsetValue * 4);
+        //偏移是值
+        if (p->fromKind == facReg) {
+            if (isRegGlo(p->fromValue)) {
+                printMips("lw $v1,%d($gp)", (p->fromValue - GLO) * 4);
+                regFrom = $v1;
+            } else if (isRegMem(p->fromValue)) {
+                printMips("lw $v1,%d($fp)", p->fromValue * 4);
+                regFrom = $v1;
+            } else {
+                regFrom = p->fromValue + $t0;
+            }
+        } else {
+            printMips("li $v1,%d", p->fromValue);
+            regFrom = $v1;
+        }
+        //以上将结果写入regFrom
+        if (isRegGlo(p->head)) {
+            printMips("lw $v0,%d($gp)", (p->head - GLO) * 4);
+            printMips("sw $%d,%d($v0)", regFrom, p->offsetValue * 4);
+        } else if (isRegMem(p->head)) {
+            printMips("lw $v0,%d($fp)", p->head * 4);
+            printMips("sw $%d,%d($v0)", regFrom, p->offsetValue * 4);
+        } else {
+            printMips("sw $%d,%d($%d)", regFrom, p->offsetValue * 4, p->head + $t0);
+        }
     }
 }
 
@@ -579,7 +652,7 @@ void genRead(struct Read *p) {
     if (isRegGlo(p->reg)) {
         printMips("sw $v0,%d($gp)", (p->reg - GLO) * 4);
     } else if (isRegMem(p->reg)) {
-        printMips("sw $v0,head+%d", -p->reg * 4);
+        printMips("sw $v0,%d($fp)", p->reg * 4);
     } else {
         printMips("move $%d,$v0", p->reg + $t0);
     }
@@ -603,7 +676,7 @@ void genWrite(struct Write *p) {
             if (isRegGlo(p->value)) {
                 printMips("lw $a0,%d($gp)", (p->value - GLO) * 4);
             } else if (isRegMem(p->value)) {
-                printMips("lw $a0,head+%d", -p->value * 4);
+                printMips("lw $a0,%d($fp)", p->value * 4);
             } else {
                 printMips("move $a0,$%d", p->value + $t0);
             }
@@ -626,7 +699,7 @@ void genWrite(struct Write *p) {
             if (isRegGlo(p->value)) {
                 printMips("lw $a0,%d($gp)", (p->value - GLO) * 4);
             } else if (isRegMem(p->value)) {
-                printMips("lw $a0,head+%d", -p->value * 4);
+                printMips("lw $a0,%d($fp)", p->value * 4);
             } else {
                 printMips("move $a0,$%d", p->value + $t0);
             }
@@ -665,11 +738,7 @@ void end() {
  */
 void initData() {
     printMips(".data");
-    printMips("    head:.space %d", (regMemMax + 1) * 4);
     printMips("    glob:.space %d", (gloRegMemMax + 1) * 4);
-    while (arrayCount--) {
-        printMips("    %s:.space %d", arrLabList[arrayCount], arrSizeList[arrayCount] * 4);
-    }
     while (strCount--) {
         printMips("    %s:.asciiz \"%s\"", strLabel[strCount], strList[strCount]);
     }
@@ -723,13 +792,14 @@ void saveEnv(int isRecursion, int regListSize) {
     for (t = 0; t < regListSize; t++) {
         if (t + $t0 + MIDREG > $t9) {
             //[13,+]
-            printMips("lw $v1,head+%d #Save reg", (t + MIDREG + $t0 - $t9) * 4);
-            printMips("sw $v1,%d($sp)", -4 * offset++);
+            //printMips("lw $v1,head+%d #Save reg", (t + MIDREG + $t0 - $t9) * 4);
+            //printMips("sw $v1,%d($sp)", -4 * offset++);
         } else {
             //[0,12]
             printMips("sw $%d,%d($sp) #Save reg", t + $t0 + MIDREG, -4 * offset++);
         }
     }
+    /*
     if (isRecursion) {
         for (c = fhead->next; c != curCode[curCodeSp]; c = c->next) {
             if (c->type == Var) {
@@ -745,6 +815,8 @@ void saveEnv(int isRecursion, int regListSize) {
             }
         }
     }
+     */
+    printMips("sw $fp,%d($sp) #Save $fp", -4 * offset++);
     printMips("sw $ra,%d($sp) #Save $ra", -4 * offset++);
     printMips("addi $sp,$sp,%d", -4 * (offset - 1));
 }
@@ -758,6 +830,8 @@ void revertEnv(int isRecursion, int regListSize) {
     int offset = 0;
 
     printMips("lw $ra,%d($sp) #Revert $ra", 4 * offset++);
+    printMips("lw $fp,%d($sp) #Revert $fp", 4 * offset++);
+    /*
     if (isRecursion) {
         for (c = curCode[curCodeSp]; c != fhead; c = c->prev) {
             if (c->type == Var) {
@@ -773,11 +847,12 @@ void revertEnv(int isRecursion, int regListSize) {
             }
         }
     }
+    */
     int t;
     for (t = regListSize - 1; t >= 0; t--) {
         if (t + $t0 + MIDREG > $t9) {
-            printMips("lw $v1,%d($sp) #Revert reg", 4 * offset++);
-            printMips("sw $v1,head+%d", (t + MIDREG + $t0 - $t9) * 4);
+            //printMips("lw $v1,%d($sp) #Revert reg", 4 * offset++);
+            //printMips("sw $v1,head+%d", (t + MIDREG + $t0 - $t9) * 4);
         } else {
             printMips("lw $%d,%d($sp) #Revert reg", t + $t0 + MIDREG, 4 * offset++);
         }
@@ -794,5 +869,31 @@ void revertEnv(int isRecursion, int regListSize) {
     }
     printMips("addi $sp,$sp,%d", 4 * offset);
 }
+
+void allocateSpace(struct AlloSpa *as) {
+    if (as->glo == 0) {
+        printMips("move $fp,$sp #分配运行栈");
+        printMips("addi $sp,$sp,%d", -delta * 4);
+        while (arrListSize--) {
+            delta += arrList[arrListSize].size;
+            printMips("addi $sp,$sp,%d #数组[%d]", -4 * arrList[arrListSize].size, arrList[arrListSize].size);
+            if (isRegGlo(arrList[arrListSize].reg)) {
+                //头指针在全局变量中
+                printf("panic in allocate space\n");
+            } else if (isRegMem(arrList[arrListSize].reg)) {
+                //数组头指针在额外寄存器中
+                printMips("sw $sp,%d($fp)", 4 * arrList[arrListSize].reg);
+            } else {
+                printMips("move $%d,$sp", arrList[arrListSize].reg + $t0);
+            }
+        }
+    } else {
+        printMips("#分配全局区");
+        while (arrListSize--) {
+            printMips("addi $v0,$gp,%d #数组[%d]的地址", (gloRegMemMax + 1) * 4, arrList[arrListSize].size);
+            printMips("sw $v0,%d($gp)", (arrList[arrListSize].reg - GLO) * 4);
+            gloRegMemMax += arrList[arrListSize].size;
+        }
+    }
+}
 //todo 赋值优化
-//todo 额外变量、数组进栈

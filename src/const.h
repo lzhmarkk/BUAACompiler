@@ -14,5 +14,7 @@
 #define LABELLENGTH 9
 //记录保存环境时指令位置的栈大小
 #define ENV_STACK_LENGTH 100
+//一个函数内数组数量的最大值
+#define ARRSIZE 20
 
 #endif //WORDANALYZER_C_CONST_H

@@ -84,14 +84,14 @@ struct Code *emit(enum CodeType t, int size, ...) {
         new->info = p;
     } else if (t == ArrL && size == 4) {
         struct ArrL *p = (struct ArrL *) malloc(sizeof(struct ArrL));
-        p->label = va_arg(vl, char*);
+        p->head = va_arg(vl, int);
         p->offsetValue = va_arg(vl, int);
         p->offKind = va_arg(vl, enum factorKind);
         p->to = va_arg(vl, int);
         new->info = p;
     } else if (t == ArrS && size == 5) {
         struct ArrS *p = (struct ArrS *) malloc(sizeof(struct ArrS));
-        p->label = va_arg(vl, char*);
+        p->head = va_arg(vl, int);
         p->offsetValue = va_arg(vl, int);
         p->offKind = va_arg(vl, enum factorKind);
         p->fromValue = va_arg(vl, int);
@@ -123,6 +123,10 @@ struct Code *emit(enum CodeType t, int size, ...) {
         r->isRecursion = curFunc ? !strcmp(name, curFunc) : 0;
         r->regListSize = getCommonReg(curFunc, name);
         new->info = r;
+    } else if (t == AlloSpa && size == 1) {
+        struct AlloSpa *as = (struct AlloSpa *) malloc(sizeof(struct AlloSpa));
+        as->glo = va_arg(vl, int);
+        new->info = as;
     }
 
     if (code == NULL) {
@@ -342,7 +346,7 @@ void printCode() {
                 break;
             case ArrL: {
                 struct ArrL *a = p->info;
-                printf("$t%d = %s", a->to, a->label);
+                printf("$t%d = $t%d", a->to, a->head);
                 if (a->offKind == facReg) {
                     printf("[$t%d]\n", a->offsetValue);
                 } else {
@@ -352,7 +356,7 @@ void printCode() {
             }
             case ArrS: {
                 struct ArrS *a = p->info;
-                printf("%s", a->label);
+                printf("$t%d", a->head);
                 if (a->offKind == facReg) {
                     printf("[$t%d] = ", a->offsetValue);
                 } else {
@@ -429,6 +433,9 @@ void printCode() {
                 printf("}\n");
                 break;
             }
+            case AlloSpa:
+                printf("Allocate Space(%s)\n", ((struct AlloSpa *) (p->info))->glo == 1 ? "Glo" : "");
+                break;
         }
     }
 

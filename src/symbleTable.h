@@ -6,8 +6,6 @@
 
 int level;
 
-char arrayLabel[LABELLENGTH];//临时
-int arrayCount;//array的计数器
 /**
  * 标识符Kind和Type属性
  */
@@ -29,7 +27,6 @@ enum Type {
 struct ArrayTable {
     enum Type type;//数组元素类型
     int size;//数组大小
-    char label[LABELLENGTH];//用一个独特的标签代替可能重复的数组名
 };
 struct FuncTable {
     int paraSize;//参数个数
@@ -74,10 +71,6 @@ int getConstValue(char *name, int leve);
 void printTable();
 
 int __str2int(char *str);
-
-char *genArrLabel();
-
-char *getArrLabel(char *name, int leve);
 
 int getCommonReg(char *func1, char *func2);
 

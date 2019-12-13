@@ -20,6 +20,7 @@ void programDef() {
         symbleList[wp + 2] != LPARENT) {
         varyExpln();
     }
+    emit(AlloSpa, 1, 1);
     while (symbleList[wp + 1] != MAINTK) {
         if ((symbleList[wp] == INTTK || symbleList[wp] == CHARTK) &&
             symbleList[wp + 1] == IDENFR &&
@@ -220,11 +221,7 @@ void varyDef() {
                 addToTable(name, VAR, t, level, 0);
             }
         }
-        if (size == 0) {
-            emit(Var, 4, t, name, getReg(name, level), size);
-        } else {
-            emit(Var, 4, t, getArrLabel(name, level), getReg(name, level), size);
-        }
+        emit(Var, 4, t, name, getReg(name, level), size);
         if (symbleList[wp] == COMMA) {
             printWord();
             continue;
@@ -310,6 +307,7 @@ void mutiSentDef() {
     if (symbleList[wp] == INTTK || symbleList[wp] == CHARTK) {
         varyExpln();
     }
+    emit(AlloSpa, 1, 0);
     sentsDef();
     printSyntax("<复合语句>");
 }
@@ -493,7 +491,7 @@ int *factorDef() {
                 clearRegTmp(re[1]);
             }
             value = alloRegTmp();
-            emit(ArrL, 4, getArrLabel(name, level), re[1], re[2], value);
+            emit(ArrL, 4, getReg(name, level), re[1], re[2], value);
             if (symbleList[wp] != RBRACK) {
                 error(lines[wp], MISS_RBRACK);
             } else { printWord(); }
@@ -648,7 +646,7 @@ void assignSentDef() {
         if (fromKind == facReg && isRegTmp(fromValue)) {
             clearRegTmp(fromValue);
         }
-        emit(ArrS, 5, getArrLabel(name, level), offset, offKind, fromValue, fromKind);
+        emit(ArrS, 5, getReg(name, level), offset, offKind, fromValue, fromKind);
     } else panic("assignSentDef");
     printSyntax("<赋值语句>");
 }

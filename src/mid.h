@@ -34,7 +34,8 @@ enum CodeType {
     Read,//读变量
     Write,//写字符串或变量
     SavEnv,//保存环境
-    RevEnv//回复环境
+    RevEnv,//回复环境
+    AlloSpa//开辟空间
 };
 enum BranchType {
     BEQ,
@@ -110,13 +111,13 @@ struct Label {
     char *name;
 };
 struct ArrL {
-    char *label;//数组标志
+    int head;//指针寄存器
     int offsetValue;//偏移值
     enum factorKind offKind;//偏移值的类型(int,char,reg)
     int to;//目的寄存器
 };
 struct ArrS {
-    char *label;//数组标志
+    int head;//指针寄存器
     int offsetValue;//偏移值
     enum factorKind offKind;//偏移值的类型(int,char,reg)
     int fromValue;//源的值
@@ -140,6 +141,11 @@ struct RevEnv {
     int isRecursion;//是否为递归后的环境恢复
     int regListSize;
 };
+
+struct AlloSpa{
+    int glo;//如果是全局，置1
+};
+
 struct Code {
     enum CodeType type;
     void *info;

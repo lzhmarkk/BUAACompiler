@@ -20,8 +20,12 @@ void addToTable(char *name, enum Kind kind, enum Type type, int leve, int size, 
         struct ArrayTable *newAT = (struct ArrayTable *) malloc(sizeof(struct ArrayTable));
         newAT->type = va_arg(vl, int);
         newAT->size = __str2int(va_arg(vl, char*));
-        strcpy(newAT->label, genArrLabel());//给数数组生成一个独特的伪名
-        new->reg = 0;//数组不分配寄存器
+        //数组分配寄存器，用于存头指针
+        if (leve == 0) {
+            new->reg = alloRegGlo();
+        } else {
+            new->reg = alloReg();
+        }
         new->info = newAT;
     } else if (kind == FUNC && type == VOID && size == 2) {
         //如果是一个函数
@@ -270,8 +274,13 @@ void printTable() {
                    (ret == INT ? "INT" : ret == CHAR ? "CHAR" : "VOID"));
         } else if (p->kind == VAR && p->type == ARRAY) {
             struct ArrayTable *t = (struct ArrayTable *) p->info;
-            printf("%10s %5s %5s   %2d      --(%s) %s:\n", p->name, kind, type, p->level,
-                   t->type == INT ? "INT" : "CHAR", t->label);
+            if (p->reg >= GLO) {
+                printf("%10s %5s %5s   %2d  $t%d(Glo) --(%s)\n", p->name, kind, type, p->level, p->reg,
+                       t->type == INT ? "INT" : "CHAR");
+            } else {
+                printf("%10s %5s %5s   %2d  $t%d --(%s)\n", p->name, kind, type, p->level, p->reg,
+                       t->type == INT ? "INT" : "CHAR");
+            }
         } else if (p->kind == CONST) {
             printf("%10s %5s %5s   %2d      --%d\n", p->name, kind, type, p->level,
                    ((struct ConstTable *) p->info)->value);
@@ -285,39 +294,6 @@ void printTable() {
             }
         }
     }
-}
-
-/**
- * 生成该数组的标签
- */
-char *genArrLabel() {
-    arrayLabel[0] = 'a';
-    arrayLabel[1] = 'r';
-    arrayLabel[2] = 'r';
-    arrayLabel[3] = (char) (arrayCount / 100 + '0');
-    arrayLabel[4] = (char) ((arrayCount / 10) % 10 + '0');
-    arrayLabel[5] = (char) (arrayCount % 10 + '0');
-    arrayLabel[6] = '\0';
-    arrayCount++;
-    return arrayLabel;
-}
-
-/**
- * 获取该数组的标签
- */
-char *getArrLabel(char *name, int leve) {
-    struct Table *p;
-    for (p = table; p != NULL; p = p->next) {
-        if (!strcmp(p->name, name) && p->level == leve) {
-            return ((struct ArrayTable *) p->info)->label;
-        }
-    }
-    for (p = table; p != NULL; p = p->next) {
-        if (!strcmp(p->name, name) && p->level == 0) {
-            return ((struct ArrayTable *) p->info)->label;
-        }
-    }
-    return NULL;
 }
 
 int getCommonReg(char *func1, char *func2) {
