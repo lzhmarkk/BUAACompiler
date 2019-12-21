@@ -9,7 +9,7 @@
 
 #define DEBUG 1
 int j;//token length
-FILE *fpI = NULL, *fpO = NULL, *fpE = NULL, *fpM = NULL;
+FILE *fpI = NULL, *fpO = NULL, *fpE = NULL, *fpM = NULL, *fpMid = NULL;
 
 int main() {
     if (!DEBUG) {
@@ -17,11 +17,13 @@ int main() {
         fpO = fopen("output.txt", "w");
         fpE = fopen("error.txt", "w");
         fpM = fopen("mips.txt", "w");
+        fpMid = fopen("mid.txt", "w");
     } else {
         fpI = fopen("../test/testfile.txt", "r");
         fpO = fopen("../test/output.txt", "w");
         fpE = fopen("../test/error.txt", "w");
         fpM = fopen("../test/mips.txt", "w");
+        fpMid = fopen("../test/mid.txt", "w");
     }
     int l = 0;
     while (fgets(buf, MAXLENGTH, fpI)) {
@@ -90,4 +92,11 @@ void printMips(const char *msg, ...) {
     vfprintf(fpM, msg, args);
     va_end(args);
     vfprintf(fpM, "\n", args);
+}
+
+void printMid(const char *msg, ...) {
+    va_list args;
+    va_start(args, msg);
+    vfprintf(fpMid, msg, args);
+    va_end(args);
 }

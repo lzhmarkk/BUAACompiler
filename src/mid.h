@@ -92,7 +92,7 @@ struct Tuple {
     enum factorKind factorKindA;//操作数A的类型(int,char,reg)
     int valueB;
     enum factorKind factorKindB;//操作数B的类型(int,char,reg)
-    int regC;//返回的一定是寄存器//todo 若A!=reg,B!=reg，直接计算
+    int regC;//返回的一定是寄存器
 };
 struct Assig {
     int fromValue;//源的值
@@ -142,7 +142,7 @@ struct RevEnv {
     int regListSize;
 };
 
-struct AlloSpa{
+struct AlloSpa {
     int glo;//如果是全局，置1
 };
 
@@ -164,5 +164,7 @@ struct Code *getLabel(char *name);
 enum BranchType reverse(enum BranchType type);
 
 void printCode();
+
+void printMid(const char *msg, ...);
 
 #endif //WORDANALYZER_C_MID_H

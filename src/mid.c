@@ -214,46 +214,58 @@ void printCode() {
         switch (p->type) {
             case Func:
                 printf("%s():\n", ((struct Func *) p->info)->name);
+                printMid("%s():\n", ((struct Func *) p->info)->name);
                 break;
             case Push: {
                 struct Push *push = p->info;
                 if (push->kind == facInt) {
                     printf("Push %d\n", push->value);
+                    printMid("Push %d\n", push->value);
                 } else if (push->kind == facChar) {
                     printf("Push \'%c\'\n", push->value);
+                    printMid("Push \'%c\'\n", push->value);
                 } else {
                     printf("Push $t%d\n", push->value);
+                    printMid("Push $t%d\n", push->value);
                 }
                 break;
             }
             case Call:
                 printf("Call %s\n", ((struct Call *) p->info)->func->name);
+                printMid("Call %s\n", ((struct Call *) p->info)->func->name);
                 break;
             case Para:
                 printf("Para $t%d\n", ((struct Para *) p->info)->reg);
+                printMid("Para $t%d\n", ((struct Para *) p->info)->reg);
                 break;
             case Ret: {
                 struct Ret *ret = p->info;
                 if (ret->kind == facInt) {
                     printf("Return %d\n", ret->value);
+                    printMid("Return %d\n", ret->value);
                 } else if (ret->kind == facChar) {
                     printf("Return \'%c\'\n", ret->value);
+                    printMid("Return \'%c\'\n", ret->value);
                 } else {
                     printf("Return $t%d\n", ret->value);
+                    printMid("Return $t%d\n", ret->value);
                 }
                 break;
             }
             case ReadRet:
                 printf("getReturn $t%d\n", ((struct ReadRet *) p->info)->reg);
+                printMid("getReturn $t%d\n", ((struct ReadRet *) p->info)->reg);
                 break;
             case Var: {
                 struct Var *v = p->info;
                 printf("Var %s $t%d %d\n", v->name, v->reg, v->size);
+                printMid("Var %s $t%d %d\n", v->name, v->reg, v->size);
                 break;
             }
             case Const: {
                 struct Const *c = p->info;
                 printf("Const %s $t%d = %d\n", c->name, c->reg, c->value);
+                printMid("Const %s $t%d = %d\n", c->name, c->reg, c->value);
                 break;
             }
             case Tuple: {
@@ -279,24 +291,31 @@ void printCode() {
                 switch (t->factorKindA) {
                     case facInt:
                         printf("$t%d = %d", t->regC, t->valueA);
+                        printMid("$t%d = %d", t->regC, t->valueA);
                         break;
                     case facChar:
                         printf("$t%d = \'%c\'", t->regC, t->valueA);
+                        printMid("$t%d = \'%c\'", t->regC, t->valueA);
                         break;
                     case facReg:
                         printf("$t%d = $t%d", t->regC, t->valueA);
+                        printMid("$t%d = $t%d", t->regC, t->valueA);
                         break;
                 }
                 printf(" %c ", Op);
+                printMid(" %c ", Op);
                 switch (t->factorKindB) {
                     case facInt:
                         printf("%d\n", t->valueB);
+                        printMid("%d\n", t->valueB);
                         break;
                     case facChar:
                         printf("\'%c\'\n", t->valueB);
+                        printMid("\'%c\'\n", t->valueB);
                         break;
                     case facReg:
                         printf("$t%d\n", t->valueB);
+                        printMid("$t%d\n", t->valueB);
                         break;
                 }
                 break;
@@ -305,15 +324,19 @@ void printCode() {
                 struct Assig *a = p->info;
                 if (a->fromKind == facInt) {
                     printf("$t%d = %d\n", a->to, a->fromValue);
+                    printMid("$t%d = %d\n", a->to, a->fromValue);
                 } else if (a->fromKind == facChar) {
                     printf("$t%d = \'%c\'\n", a->to, a->fromValue);
+                    printMid("$t%d = \'%c\'\n", a->to, a->fromValue);
                 } else {
                     printf("$t%d = $t%d\n", a->to, a->fromValue);
+                    printMid("$t%d = $t%d\n", a->to, a->fromValue);
                 }
                 break;
             }
             case Goto:
                 printf("Goto %s\n", ((struct Goto *) (p->info))->label->name);
+                printMid("Goto %s\n", ((struct Goto *) (p->info))->label->name);
                 break;
             case Bra: {
                 struct Bra *b = p->info;
@@ -339,68 +362,90 @@ void printCode() {
                         break;
                 }
                 printf("branch(%s) t%d %s\n", Op, b->reg, ((struct Label *) b->label)->name);
+                printMid("branch(%s) t%d %s\n", Op, b->reg, ((struct Label *) b->label)->name);
                 break;
             }
             case Label:
                 printf("%s:\n", ((struct Label *) p->info)->name);
+                printMid("%s:\n", ((struct Label *) p->info)->name);
                 break;
             case ArrL: {
                 struct ArrL *a = p->info;
                 printf("$t%d = $t%d", a->to, a->head);
+                printMid("$t%d = $t%d", a->to, a->head);
                 if (a->offKind == facReg) {
                     printf("[$t%d]\n", a->offsetValue);
+                    printMid("[$t%d]\n", a->offsetValue);
                 } else {
                     printf("[%d]\n", a->offsetValue);
+                    printMid("[%d]\n", a->offsetValue);
                 }
                 break;
             }
             case ArrS: {
                 struct ArrS *a = p->info;
                 printf("$t%d", a->head);
+                printMid("$t%d", a->head);
                 if (a->offKind == facReg) {
                     printf("[$t%d] = ", a->offsetValue);
+                    printMid("[$t%d] = ", a->offsetValue);
                 } else {
                     printf("[%d] = ", a->offsetValue);
+                    printMid("[%d] = ", a->offsetValue);
                 }
                 if (a->fromKind == facChar) {
                     printf("\'%c\'\n", a->fromValue);
+                    printMid("\'%c\'\n", a->fromValue);
                 } else if (a->fromKind == facInt) {
                     printf("%d\n", a->fromValue);
+                    printMid("%d\n", a->fromValue);
                 } else {
                     printf("$t%d\n", a->fromValue);
+                    printMid("$t%d\n", a->fromValue);
                 }
                 break;
             }
             case Read: {
                 struct Read *r = p->info;
                 printf("Read(%s) $t%d\n", r->type == INT ? "Int" : "Char", r->reg);
+                printMid("Read(%s) $t%d\n", r->type == INT ? "Int" : "Char", r->reg);
                 break;
             }
             case Write: {
                 struct Write *w = p->info;
                 printf("Write ");
+                printMid("Write ");
                 switch (w->writeType) {
                     case STR_ONLY:
                         printf("\"%s\"\n", w->string);
+                        printMid("\"%s\"\n", w->string);
                         break;
                     case REG_ONLY:
                         printf("$t%d\n", w->value);
+                        printMid("$t%d\n", w->value);
                         break;
                     case VALUE_ONLY: {
-                        if (w->type == INT)
+                        if (w->type == INT) {
                             printf("%d\n", w->value);
-                        else
+                            printMid("%d\n", w->value);
+                        } else {
                             printf("\'%c\'\n", w->value);
+                            printMid("\'%c\'\n", w->value);
+                        }
                         break;
                     }
                     case STR_REG:
                         printf("\"%s\",$t%d\n", w->string, w->value);
+                        printMid("\"%s\",$t%d\n", w->string, w->value);
                         break;
                     case STR_VALUE:
-                        if (w->type == INT)
+                        if (w->type == INT) {
                             printf("\"%s\",%d\n", w->string, w->value);
-                        else
+                            printMid("\"%s\",%d\n", w->string, w->value);
+                        } else {
                             printf("\"%s\",\'%c\'\n", w->string, w->value);
+                            printMid("\"%s\",\'%c\'\n", w->string, w->value);
+                        }
                         break;
                 }
                 break;
@@ -408,35 +453,43 @@ void printCode() {
             case SavEnv: {
                 struct SavEnv *se = p->info;
                 printf("Save Env(%1d){", se->isRecursion);
+                printMid("Save Env(%1d){", se->isRecursion);
                 int t;
                 for (t = 0; t < se->regListSize; t++) {
                     if (t + $t0 + MIDREG > $t9) {
                         printf("%d,", -(t + MIDREG + $t0 - $t9));
+                        printMid("%d,", -(t + MIDREG + $t0 - $t9));
                     } else {
                         printf("$%d,", t + $t0 + MIDREG);
+                        printMid("$%d,", t + $t0 + MIDREG);
                     }
                 }
                 printf("}\n");
+                printMid("}\n");
                 break;
             }
             case RevEnv: {
                 struct RevEnv *re = p->info;
                 printf("Revert Env(%1d){", re->isRecursion);
+                printMid("Revert Env(%1d){", re->isRecursion);
                 int t;
                 for (t = re->regListSize - 1; t >= 0; t--) {
                     if (t + $t0 + MIDREG > $t9) {
                         printf("%d,", -(t + MIDREG + $t0 - $t9));
+                        printMid("%d,", -(t + MIDREG + $t0 - $t9));
                     } else {
                         printf("$%d,", t + $t0 + MIDREG);
+                        printMid("$%d,", t + $t0 + MIDREG);
                     }
                 }
                 printf("}\n");
+                printMid("}\n");
                 break;
             }
             case AlloSpa:
                 printf("Allocate Space(%s)\n", ((struct AlloSpa *) (p->info))->glo == 1 ? "Glo" : "");
+                printMid("Allocate Space(%s)\n", ((struct AlloSpa *) (p->info))->glo == 1 ? "Glo" : "");
                 break;
         }
     }
-
 }

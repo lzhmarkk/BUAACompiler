@@ -208,7 +208,6 @@ void genPara(struct Para *p, int index) {
 void genReadRet(struct ReadRet *p) {
     if (COMMENT)printMips("#读取返回值");
     printMips("move $%d,$v0", p->reg + $t0);
-    //todo 直接v0运算
 }
 
 /**
@@ -896,4 +895,3 @@ void allocateSpace(struct AlloSpa *as) {
         }
     }
 }
-//todo 赋值优化
