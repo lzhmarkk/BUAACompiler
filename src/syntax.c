@@ -527,7 +527,7 @@ int *factorDef() {
             wp++;
         } else {
             if (isRetFunc(name)) {
-                value = retFuncCallDef();
+                value = retFuncCallDef(1);
                 ret = getType(name, 0);
             } else {
                 error(lines[wp - 1], CALL_UNRET_FUNC);
@@ -585,7 +585,7 @@ void sentDef() {
             } else { printWord(); }
         } else if (symbleList[wp + 1] == LPARENT) {
             if (isRetFunc(tokenList[wp])) {
-                retFuncCallDef();
+                retFuncCallDef(0);
                 if (symbleList[wp] != SEMICN) {
                     error(lines[wp - 1], MISS_SEMI);
                 } else { printWord(); }
@@ -862,7 +862,7 @@ int stepDef() {
 /**
  * 有返回值函数调用语句
  */
-int retFuncCallDef() {
+int retFuncCallDef(int needRet) {
     int r;
     idenDef();
     char *name = tokenList[wp - 1];
@@ -876,13 +876,14 @@ int retFuncCallDef() {
     if (symbleList[wp] != RPARENT) {
         error(lines[wp - 1], MISS_RPARENT);
     } else { printWord(); }
-    int reg = alloRegTmp();
     emit(Call, 1, getLabel(name)->info);
     emit(RevEnv, 2, curFunc, name);
-    emit(ReadRet, 1, reg);//todo：有时候不用get return
-    //todo:有返回值函数假如结果没有收录，请删除临时寄存器
+    if (needRet) {
+        r = alloRegTmp();
+        emit(ReadRet, 1, r);
+    }
     printSyntax("<有返回值函数调用语句>");
-    return reg;
+    return r;
 }
 
 /**

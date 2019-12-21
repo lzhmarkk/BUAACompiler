@@ -67,7 +67,7 @@ void loopDef();
 
 int stepDef();
 
-int retFuncCallDef();
+int retFuncCallDef(int needRet);
 
 void unRetFuncCallDef();
 

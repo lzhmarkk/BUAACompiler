@@ -2,8 +2,8 @@
 #include "stdio.h"
 
 int alloReg() {
-    if (reg == 0) {
-        reg += MIDREG;
+    if (reg < MIDREG) {
+        reg = MIDREG;
     }
 
     if (reg < 18) {
