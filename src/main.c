@@ -7,7 +7,7 @@
 #include "generate.h"
 #include "stdarg.h"
 
-#define DEBUG 0
+#define DEBUG 1
 int j;//token length
 FILE *fpI = NULL, *fpO = NULL, *fpE = NULL, *fpM = NULL, *fpMid = NULL;
 

@@ -325,5 +325,6 @@ int getCommonReg(char *func1, char *func2) {
             break;
         }
     }
-    return func1Size < func2Size ? func1Size : func2Size;
+    //return func1Size < func2Size ? func1Size : func2Size;
+    return func1Size;
 }
