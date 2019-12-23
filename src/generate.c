@@ -15,16 +15,16 @@ int delta;
 void genMips() {
     hasEntry = 0;
     printMips(".text");
-    printMips("la $gp,glob");
+    printMips("la $gp,__glob");
     struct Code *p;
     for (p = code; p != NULL; p = p->next) {
         switch (p->type) {
             case Func: {
                 if (!hasEntry) {
                     hasEntry = 1;
-                    printMips("jal Main");
+                    printMips("jal __IMain");
                     //printMips("nop");
-                    printMips("j END");
+                    printMips("j __IEnd");
                     //printMips("nop");
                 }
                 genFunc(p->info);
@@ -123,7 +123,7 @@ void genMips() {
  */
 void genFunc(struct Func *p) {
     if (COMMENT)printMips("#函数头");
-    printMips("%s:", p->name);
+    printMips("__I%s:", p->name);
 }
 
 /**
@@ -175,7 +175,7 @@ void genPush(struct Push *p) {
  */
 void genCall(struct Call *p) {
     if (COMMENT)printMips("#调用函数");
-    printMips("jal %s", p->func->name);
+    printMips("jal __I%s", p->func->name);
     //printMips("nop");
 }
 
@@ -726,7 +726,7 @@ void genWrite(struct Write *p) {
  * main中生成return
  */
 void end() {
-    printMips("END:");
+    printMips("__IEnd:");
     printMips("li $v0,10");
     printMips("syscall");
     printMips("\n");
@@ -737,7 +737,7 @@ void end() {
  */
 void initData() {
     printMips(".data");
-    printMips("    glob:.space %d", (gloRegMemMax + 1) * 4);
+    printMips("    __glob:.space %d", (gloRegMemMax + 1) * 4);
     while (strCount--) {
         printMips("    %s:.asciiz \"%s\"", strLabel[strCount], strList[strCount]);
     }
@@ -748,13 +748,14 @@ void initData() {
  * 返回该字符串的标签
  */
 char *getStrLab(char *str) {
-    strLabel[strCount][0] = 's';
-    strLabel[strCount][1] = 't';
-    strLabel[strCount][2] = 'r';
-    strLabel[strCount][3] = (char) (strCount / 100 + '0');
-    strLabel[strCount][4] = (char) ((strCount / 10) % 10 + '0');
-    strLabel[strCount][5] = (char) (strCount % 10 + '0');
-    strLabel[strCount][6] = '\0';
+    strLabel[strCount][0] = '_';
+    strLabel[strCount][1] = 's';
+    strLabel[strCount][2] = 't';
+    strLabel[strCount][3] = 'r';
+    strLabel[strCount][4] = (char) (strCount / 100 + '0');
+    strLabel[strCount][5] = (char) ((strCount / 10) % 10 + '0');
+    strLabel[strCount][6] = (char) (strCount % 10 + '0');
+    strLabel[strCount][7] = '\0';
 
     int t;
     for (t = 0; *str; str++, t++) {

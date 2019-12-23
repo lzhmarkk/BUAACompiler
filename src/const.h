@@ -11,7 +11,7 @@
 //标签的数量
 #define LABELSIZE 100
 //每个标签的长度
-#define LABELLENGTH 9
+#define LABELLENGTH 15
 //记录保存环境时指令位置的栈大小
 #define ENV_STACK_LENGTH 100
 //一个函数内数组数量的最大值

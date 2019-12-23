@@ -177,15 +177,16 @@ struct Code *getLabel(char *name) {
 }
 
 char *genLabel() {
-    labelBase[loopCount][0] = 'L';
-    labelBase[loopCount][1] = 'a';
-    labelBase[loopCount][2] = 'b';
-    labelBase[loopCount][3] = 'e';
-    labelBase[loopCount][4] = 'l';
-    labelBase[loopCount][5] = (char) (loopCount / 100 + '0');
-    labelBase[loopCount][6] = (char) ((loopCount % 100) / 10 + '0');
-    labelBase[loopCount][7] = (char) (loopCount % 10 + '0');
-    labelBase[loopCount][8] = '\0';
+    labelBase[loopCount][0] = '_';
+    labelBase[loopCount][1] = 'L';
+    labelBase[loopCount][2] = 'a';
+    labelBase[loopCount][3] = 'b';
+    labelBase[loopCount][4] = 'e';
+    labelBase[loopCount][5] = 'l';
+    labelBase[loopCount][6] = (char) (loopCount / 100 + '0');
+    labelBase[loopCount][7] = (char) ((loopCount % 100) / 10 + '0');
+    labelBase[loopCount][8] = (char) (loopCount % 10 + '0');
+    labelBase[loopCount][9] = '\0';
     return labelBase[loopCount++];
 }
 
